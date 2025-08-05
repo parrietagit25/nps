@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PHP Service
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nps_php
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./php.ini:/usr/local/etc/php/php.ini
+    depends_on:
+      - mysql
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_DATABASE=nps_db
+      - MYSQL_USER=nps_user
+      - MYSQL_PASSWORD=nps_password
+    networks:
+      - nps_network
+
+  # MySQL Service
+  mysql:
+    image: mysql:8.0
+    container_name: nps_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=nps_db
+      - MYSQL_USER=nps_user
+      - MYSQL_PASSWORD=nps_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - nps_network
+
+  # phpMyAdmin Service (optional)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: nps_phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=nps_user
+      - PMA_PASSWORD=nps_password
+    depends_on:
+      - mysql
+    networks:
+      - nps_network
+
+volumes:
+  mysql_data:
+
+networks:
+  nps_network:
+    driver: bridge 
