@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     container_name: nps_php
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
       - ./src:/var/www/html
       - ./php.ini:/usr/local/etc/php/php.ini
@@ -39,12 +39,12 @@ services:
     networks:
       - nps_network
 
-  # phpMyAdmin Service (optional)
+  # phpMyAdmin Service
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: nps_phpmyadmin
     ports:
-      - "8081:80"
+      - "8080:80"
     environment:
       - PMA_HOST=mysql
       - PMA_USER=nps_user

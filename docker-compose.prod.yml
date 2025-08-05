@@ -41,12 +41,12 @@ services:
       - nps_network
     restart: unless-stopped
 
-  # phpMyAdmin Service (opcional en producción)
+  # phpMyAdmin Service
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: nps_phpmyadmin_prod
     ports:
-      - "8080:80"  # Puerto diferente para producción
+      - "8080:80"  # Puerto 8080 para phpMyAdmin
     environment:
       - PMA_HOST=mysql
       - PMA_USER=nps_user

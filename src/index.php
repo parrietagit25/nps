@@ -65,8 +65,8 @@
         <div class="status info">
             <h3>🌐 Acceso a Servicios</h3>
             <ul>
-                <li><strong>Aplicación PHP:</strong> <a href="http://localhost:8080" target="_blank">http://localhost:8080</a></li>
-                <li><strong>phpMyAdmin:</strong> <a href="http://localhost:8081" target="_blank">http://localhost:8081</a></li>
+                <li><strong>Aplicación PHP:</strong> <a href="http://localhost" target="_blank">http://localhost</a> (puerto 80)</li>
+                <li><strong>phpMyAdmin:</strong> <a href="http://localhost:8080" target="_blank">http://localhost:8080</a></li>
                 <li><strong>MySQL:</strong> localhost:3306</li>
             </ul>
         </div>
