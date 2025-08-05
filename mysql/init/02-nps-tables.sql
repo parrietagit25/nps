@@ -3,6 +3,11 @@
 
 USE nps_db;
 
+-- Drop existing tables if they exist (to avoid conflicts)
+DROP TABLE IF EXISTS nps_responses;
+DROP TABLE IF EXISTS campaigns;
+DROP TABLE IF EXISTS settings;
+
 -- Table: campaigns (Encuestas NPS)
 CREATE TABLE IF NOT EXISTS campaigns (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,19 +41,13 @@ CREATE TABLE IF NOT EXISTS nps_responses (
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Table: users (Usuarios del sistema)
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255),
-    role ENUM('admin', 'manager', 'viewer') DEFAULT 'viewer',
-    is_active BOOLEAN DEFAULT TRUE,
-    last_login TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Update existing users table to add missing columns
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS username VARCHAR(50) UNIQUE,
+ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255),
+ADD COLUMN IF NOT EXISTS role ENUM('admin', 'manager', 'viewer') DEFAULT 'viewer',
+ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
+ADD COLUMN IF NOT EXISTS last_login TIMESTAMP NULL;
 
 -- Table: settings (Configuración del sistema)
 CREATE TABLE IF NOT EXISTS settings (
@@ -76,7 +75,11 @@ ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 -- Insert default admin user (password: admin123)
 INSERT INTO users (username, email, password_hash, full_name, role) VALUES
 ('admin', 'admin@nps.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrador', 'admin')
-ON DUPLICATE KEY UPDATE email = VALUES(email);
+ON DUPLICATE KEY UPDATE 
+    email = VALUES(email),
+    password_hash = VALUES(password_hash),
+    full_name = VALUES(full_name),
+    role = VALUES(role);
 
 -- Insert sample campaign
 INSERT INTO campaigns (name, description, start_date, end_date) VALUES
@@ -84,13 +87,13 @@ INSERT INTO campaigns (name, description, start_date, end_date) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- Create indexes for better performance
-CREATE INDEX idx_nps_responses_campaign_id ON nps_responses(campaign_id);
-CREATE INDEX idx_nps_responses_created_at ON nps_responses(created_at);
-CREATE INDEX idx_nps_responses_score ON nps_responses(score);
-CREATE INDEX idx_nps_responses_category ON nps_responses(category);
-CREATE INDEX idx_campaigns_is_active ON campaigns(is_active);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_nps_responses_campaign_id ON nps_responses(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_nps_responses_created_at ON nps_responses(created_at);
+CREATE INDEX IF NOT EXISTS idx_nps_responses_score ON nps_responses(score);
+CREATE INDEX IF NOT EXISTS idx_nps_responses_category ON nps_responses(category);
+CREATE INDEX IF NOT EXISTS idx_campaigns_is_active ON campaigns(is_active);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 -- Show created tables
 SHOW TABLES; 
