@@ -29,7 +29,9 @@ if ($conn) {
     
     // NPS promedio
     $stmt = $conn->query("SELECT AVG(score) as average FROM nps_responses");
-    $stats['avg_nps'] = round($stmt->fetch(PDO::FETCH_ASSOC)['average'], 2);
+    //$stats['avg_nps'] = round($stmt->fetch(PDO::FETCH_ASSOC)['average'], 2);
+    $stats['avg_nps'] = round($stmt->fetch(PDO::FETCH_ASSOC)['average'] ?? 0, 2);
+
 }
 ?>
 <!DOCTYPE html>
