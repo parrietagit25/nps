@@ -16,9 +16,9 @@ services:
       - mysql
     environment:
       - MYSQL_HOST=mysql
-      - MYSQL_DATABASE=nps_db
-      - MYSQL_USER=nps_user
-      - MYSQL_PASSWORD=nps_password
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-nps_db}
+      - MYSQL_USER=${MYSQL_USER:-nps_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-nps_password}
     networks:
       - nps_network
 
@@ -29,10 +29,10 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root_password
-      - MYSQL_DATABASE=nps_db
-      - MYSQL_USER=nps_user
-      - MYSQL_PASSWORD=nps_password
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-nps_db}
+      - MYSQL_USER=${MYSQL_USER:-nps_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-nps_password}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
@@ -45,10 +45,18 @@ services:
     container_name: nps_phpmyadmin
     ports:
       - "8080:80"
+    volumes:
+      - ./phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php
     environment:
       - PMA_HOST=mysql
-      - PMA_USER=nps_user
-      - PMA_PASSWORD=nps_password
+      - PMA_USER=${MYSQL_USER:-nps_user}
+      - PMA_PASSWORD=${PMA_PASSWORD:-nps_password}
+      - PMA_ARBITRARY=1
+      - ALLOW_EMPTY_PASSWORD=0
+      - UPLOAD_LIMIT=100M
+      - MAX_EXECUTION_TIME=300
+      - MEMORY_LIMIT=256M
+      - PMA_ABSOLUTE_URI=http://54.94.232.102:8080/
     depends_on:
       - mysql
     networks:
