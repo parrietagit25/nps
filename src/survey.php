@@ -38,15 +38,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
     $comment = trim($_POST['comment'] ?? '');
     $email = trim($_POST['email'] ?? '');
     
+    // Debug: Log los datos recibidos
+    error_log("POST data received: " . print_r($_POST, true));
+    
     if ($score !== null && $score >= 0 && $score <= 10) {
-        $stmt = $conn->prepare("INSERT INTO nps_responses (campaign_id, score, comment, email, created_at) VALUES (?, ?, ?, ?, NOW())");
-        
-        if ($stmt->execute([$campaign_id, $score, $comment, $email])) {
-            $message = '¡Gracias por tu respuesta!';
-            $messageType = 'success';
-            $campaign = null; // Ocultar formulario después de enviar
-        } else {
-            $message = 'Error al enviar la respuesta';
+        try {
+            $stmt = $conn->prepare("INSERT INTO nps_responses (campaign_id, score, comment, email, created_at) VALUES (?, ?, ?, ?, NOW())");
+            
+            if ($stmt->execute([$campaign_id, $score, $comment, $email])) {
+                $message = '¡Gracias por tu respuesta!';
+                $messageType = 'success';
+                $campaign = null; // Ocultar formulario después de enviar
+            } else {
+                $message = 'Error al enviar la respuesta: ' . implode(', ', $stmt->errorInfo());
+                $messageType = 'danger';
+            }
+        } catch (PDOException $e) {
+            error_log("Database error: " . $e->getMessage());
+            $message = 'Error al enviar la respuesta: ' . $e->getMessage();
             $messageType = 'danger';
         }
     } else {
@@ -195,9 +204,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
                         
                         <div class="score-buttons">
                             <?php for ($i = 0; $i <= 10; $i++): ?>
-                                <button type="button" class="score-btn" data-score="<?= $i ?>">
-                                    <?= $i ?>
-                                </button>
+                                <label class="score-btn">
+                                    <input type="radio" name="score" value="<?= $i ?>" required style="display: none;">
+                                    <span><?= $i ?></span>
+                                </label>
                             <?php endfor; ?>
                         </div>
                         
@@ -205,8 +215,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
                             <span>Muy improbable</span>
                             <span>Muy probable</span>
                         </div>
-                        
-                        <input type="hidden" name="score" id="selectedScore" required>
                     </div>
                     
                     <div class="mb-4">
@@ -256,9 +264,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Manejo de botones de puntuación
+        // Manejo de botones de puntuación con radio buttons
         const scoreButtons = document.querySelectorAll('.score-btn');
-        const selectedScoreInput = document.getElementById('selectedScore');
         const submitBtn = document.getElementById('submitBtn');
         
         scoreButtons.forEach(button => {
@@ -269,27 +276,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
                 // Seleccionar botón actual
                 this.classList.add('selected');
                 
-                // Actualizar input hidden
-                selectedScoreInput.value = this.dataset.score;
-                
                 // Habilitar botón de envío
                 submitBtn.disabled = false;
             });
         });
         
-        // Validación del formulario
+        // Validación del formulario - simplificada
         document.getElementById('surveyForm').addEventListener('submit', function(e) {
-            if (!selectedScoreInput.value) {
+            // Verificar que se haya seleccionado una puntuación
+            const selectedScore = document.querySelector('input[name="score"]:checked');
+            if (!selectedScore) {
                 e.preventDefault();
                 alert('Por favor selecciona una puntuación');
                 return false;
             }
-        });
-        
-        // Animación de carga al enviar
-        submitBtn.addEventListener('click', function() {
-            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
-            this.disabled = true;
+            
+            // Mostrar estado de carga
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+            submitBtn.disabled = true;
+            
+            // El formulario se enviará normalmente
         });
     </script>
 </body>

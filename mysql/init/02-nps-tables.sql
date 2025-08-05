@@ -8,9 +8,11 @@ CREATE TABLE IF NOT EXISTS campaigns (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
+    question TEXT,
     start_date DATE,
     end_date DATE,
     is_active BOOLEAN DEFAULT TRUE,
+    created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -19,19 +21,9 @@ CREATE TABLE IF NOT EXISTS campaigns (
 CREATE TABLE IF NOT EXISTS nps_responses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     campaign_id INT,
-    customer_email VARCHAR(255),
-    customer_name VARCHAR(255),
     score INT NOT NULL CHECK (score >= 0 AND score <= 10),
-    feedback TEXT,
-    category ENUM('detractor', 'passive', 'promoter') GENERATED ALWAYS AS (
-        CASE 
-            WHEN score <= 6 THEN 'detractor'
-            WHEN score <= 8 THEN 'passive'
-            ELSE 'promoter'
-        END
-    ) STORED,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
+    comment TEXT,
+    email VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -53,6 +45,50 @@ SET @sql = (SELECT IF(
      WHERE TABLE_SCHEMA = 'nps_db' AND TABLE_NAME = 'users' AND COLUMN_NAME = 'username') = 0,
     'ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE, ADD COLUMN password_hash VARCHAR(255), ADD COLUMN role ENUM("admin", "manager", "viewer") DEFAULT "viewer", ADD COLUMN is_active BOOLEAN DEFAULT TRUE, ADD COLUMN last_login TIMESTAMP NULL, ADD COLUMN full_name VARCHAR(255)',
     'SELECT "Columns already exist" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add created_by column to campaigns table if it doesn't exist
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = 'nps_db' AND TABLE_NAME = 'campaigns' AND COLUMN_NAME = 'created_by') = 0,
+    'ALTER TABLE campaigns ADD COLUMN created_by INT',
+    'SELECT "created_by column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add question column to campaigns table if it doesn't exist
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = 'nps_db' AND TABLE_NAME = 'campaigns' AND COLUMN_NAME = 'question') = 0,
+    'ALTER TABLE campaigns ADD COLUMN question TEXT',
+    'SELECT "question column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Update nps_responses table structure if needed
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = 'nps_db' AND TABLE_NAME = 'nps_responses' AND COLUMN_NAME = 'comment') = 0,
+    'ALTER TABLE nps_responses ADD COLUMN comment TEXT, ADD COLUMN email VARCHAR(255)',
+    'SELECT "comment and email columns already exist" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Remove old columns from nps_responses if they exist
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = 'nps_db' AND TABLE_NAME = 'nps_responses' AND COLUMN_NAME = 'customer_email') > 0,
+    'ALTER TABLE nps_responses DROP COLUMN customer_email, DROP COLUMN customer_name, DROP COLUMN feedback, DROP COLUMN category, DROP COLUMN ip_address, DROP COLUMN user_agent',
+    'SELECT "Old columns already removed" as message'
 ));
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
@@ -81,16 +117,16 @@ ON DUPLICATE KEY UPDATE
     role = VALUES(role);
 
 -- Insert sample campaign (with explicit name field)
-INSERT INTO campaigns (name, description, start_date, end_date) VALUES
-('Encuesta General de Satisfacción', 'Encuesta para medir la satisfacción general de nuestros clientes', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY))
+INSERT INTO campaigns (name, description, question, start_date, end_date, created_by) VALUES
+('Encuesta General de Satisfacción', 'Encuesta para medir la satisfacción general de nuestros clientes', '¿Qué tan probable es que recomiendes nuestro servicio a un amigo o colega?', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 1)
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- Create indexes for better performance (only if they don't exist)
 CREATE INDEX IF NOT EXISTS idx_nps_responses_campaign_id ON nps_responses(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_nps_responses_created_at ON nps_responses(created_at);
 CREATE INDEX IF NOT EXISTS idx_nps_responses_score ON nps_responses(score);
-CREATE INDEX IF NOT EXISTS idx_nps_responses_category ON nps_responses(category);
 CREATE INDEX IF NOT EXISTS idx_campaigns_is_active ON campaigns(is_active);
+CREATE INDEX IF NOT EXISTS idx_campaigns_created_by ON campaigns(created_by);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
