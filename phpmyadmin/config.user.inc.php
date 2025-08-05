@@ -64,4 +64,14 @@ $cfg['Error_Handler']['gather'] = false;
 
 // Trusted proxies (if behind a reverse proxy)
 $cfg['TrustedProxies'] = array();
+
+// Fix for session cookie issues
+$cfg['ForceSSL'] = false;
+$cfg['LoginCookieValidityDisableWarning'] = true;
+$cfg['LoginCookieStore'] = 0;
+$cfg['LoginCookieDeleteAll'] = true;
+$cfg['LoginCookieValidity'] = 1440;
+
+// Allow HTTP access
+$cfg['PmaAbsoluteUri'] = 'http://54.94.232.102:8080/';
 ?> 
