@@ -80,7 +80,7 @@ ON DUPLICATE KEY UPDATE
     full_name = VALUES(full_name),
     role = VALUES(role);
 
--- Insert sample campaign
+-- Insert sample campaign (with explicit name field)
 INSERT INTO campaigns (name, description, start_date, end_date) VALUES
 ('Encuesta General de Satisfacción', 'Encuesta para medir la satisfacción general de nuestros clientes', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY))
 ON DUPLICATE KEY UPDATE name = VALUES(name);
