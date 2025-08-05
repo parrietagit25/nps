@@ -47,7 +47,8 @@ ADD COLUMN username VARCHAR(50) UNIQUE,
 ADD COLUMN password_hash VARCHAR(255),
 ADD COLUMN role ENUM('admin', 'manager', 'viewer') DEFAULT 'viewer',
 ADD COLUMN is_active BOOLEAN DEFAULT TRUE,
-ADD COLUMN last_login TIMESTAMP NULL;
+ADD COLUMN last_login TIMESTAMP NULL,
+ADD COLUMN full_name VARCHAR(255);
 
 -- Table: settings (Configuración del sistema)
 CREATE TABLE IF NOT EXISTS settings (
