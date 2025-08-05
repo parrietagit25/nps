@@ -123,7 +123,7 @@ if ($conn) {
                             <i class="fas fa-chart-bar me-2"></i>
                             Reportes
                         </a>
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="users.php">
                             <i class="fas fa-users me-2"></i>
                             Usuarios
                         </a>
