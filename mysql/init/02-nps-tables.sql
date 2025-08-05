@@ -3,11 +3,6 @@
 
 USE nps_db;
 
--- Drop existing tables if they exist (to avoid conflicts)
-DROP TABLE IF EXISTS nps_responses;
-DROP TABLE IF EXISTS campaigns;
-DROP TABLE IF EXISTS settings;
-
 -- Table: campaigns (Encuestas NPS)
 CREATE TABLE IF NOT EXISTS campaigns (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,15 +36,6 @@ CREATE TABLE IF NOT EXISTS nps_responses (
     FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Update existing users table to add missing columns (MySQL 8.0 compatible)
-ALTER TABLE users 
-ADD COLUMN username VARCHAR(50) UNIQUE,
-ADD COLUMN password_hash VARCHAR(255),
-ADD COLUMN role ENUM('admin', 'manager', 'viewer') DEFAULT 'viewer',
-ADD COLUMN is_active BOOLEAN DEFAULT TRUE,
-ADD COLUMN last_login TIMESTAMP NULL,
-ADD COLUMN full_name VARCHAR(255);
-
 -- Table: settings (Configuración del sistema)
 CREATE TABLE IF NOT EXISTS settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -59,6 +45,18 @@ CREATE TABLE IF NOT EXISTS settings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Update existing users table to add missing columns (MySQL 8.0 compatible)
+-- Check if columns exist before adding them
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = 'nps_db' AND TABLE_NAME = 'users' AND COLUMN_NAME = 'username') = 0,
+    'ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE, ADD COLUMN password_hash VARCHAR(255), ADD COLUMN role ENUM("admin", "manager", "viewer") DEFAULT "viewer", ADD COLUMN is_active BOOLEAN DEFAULT TRUE, ADD COLUMN last_login TIMESTAMP NULL, ADD COLUMN full_name VARCHAR(255)',
+    'SELECT "Columns already exist" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Insert default settings
 INSERT INTO settings (setting_key, setting_value, description) VALUES
@@ -87,14 +85,14 @@ INSERT INTO campaigns (name, description, start_date, end_date) VALUES
 ('Encuesta General de Satisfacción', 'Encuesta para medir la satisfacción general de nuestros clientes', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY))
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
--- Create indexes for better performance
-CREATE INDEX idx_nps_responses_campaign_id ON nps_responses(campaign_id);
-CREATE INDEX idx_nps_responses_created_at ON nps_responses(created_at);
-CREATE INDEX idx_nps_responses_score ON nps_responses(score);
-CREATE INDEX idx_nps_responses_category ON nps_responses(category);
-CREATE INDEX idx_campaigns_is_active ON campaigns(is_active);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
+-- Create indexes for better performance (only if they don't exist)
+CREATE INDEX IF NOT EXISTS idx_nps_responses_campaign_id ON nps_responses(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_nps_responses_created_at ON nps_responses(created_at);
+CREATE INDEX IF NOT EXISTS idx_nps_responses_score ON nps_responses(score);
+CREATE INDEX IF NOT EXISTS idx_nps_responses_category ON nps_responses(category);
+CREATE INDEX IF NOT EXISTS idx_campaigns_is_active ON campaigns(is_active);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 -- Show created tables
 SHOW TABLES; 
