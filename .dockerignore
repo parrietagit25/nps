@@ -3,12 +3,13 @@
 .gitignore
 
 # Docker
-Dockerfile
 docker-compose.yml
+docker-compose.prod.yml
 .dockerignore
 
 # Documentation
 README.md
+DEPLOYMENT.md
 *.md
 
 # IDE
@@ -38,4 +39,8 @@ composer.lock
 # Environment files
 .env
 .env.local
-.env.production 
+.env.production
+env.example
+
+# Deployment files
+deploy.sh 
