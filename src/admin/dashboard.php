@@ -115,7 +115,7 @@ if ($conn) {
                             <i class="fas fa-tachometer-alt me-2"></i>
                             Dashboard
                         </a>
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="campaigns.php">
                             <i class="fas fa-bullhorn me-2"></i>
                             Campañas
                         </a>
