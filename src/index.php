@@ -33,7 +33,7 @@
         <h1>🚀 NPS Project - Docker Setup</h1>
         
         <div class="status success">
-            <h2>✅ PHP está funcionando correctamente</h2>
+            <h2>✅ PHP está funcionando correctamente con ngnx</h2>
             <p><strong>Versión de PHP:</strong> <?php echo phpversion(); ?></p>
             <p><strong>Servidor:</strong> <?php echo $_SERVER['SERVER_SOFTWARE'] ?? 'Apache'; ?></p>
             <p><strong>Fecha y hora:</strong> <?php echo date('Y-m-d H:i:s'); ?></p>
