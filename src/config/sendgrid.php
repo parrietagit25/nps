@@ -49,6 +49,11 @@ class SendGridService {
 
     public function sendSurveyEmail($campaign_id, $to_email, $campaign_data) {
         try {
+            // Verificar configuración de SendGrid
+            if (empty($_ENV['SENDGRID_API_KEY']) || $_ENV['SENDGRID_API_KEY'] === 'SG.your-api-key-here') {
+                return ["email" => $to_email, "status" => "error", "message" => "Error: API Key de SendGrid no configurada. Verifica el archivo .env"];
+            }
+            
             $survey_url = $this->generateSurveyUrl($campaign_id);
             
             $email = new Mail();
@@ -69,7 +74,9 @@ class SendGridService {
             if ($response->statusCode() >= 200 && $response->statusCode() < 300) {
                 return ["email" => $to_email, "status" => "success", "message" => "Email enviado correctamente"];
             } else {
-                return ["email" => $to_email, "status" => "error", "message" => "Error al enviar: " . $response->body()];
+                $error_body = $response->body();
+                $status_code = $response->statusCode();
+                return ["email" => $to_email, "status" => "error", "message" => "Error HTTP {$status_code}: " . $error_body];
             }
         } catch (Exception $e) {
             return ["email" => $to_email, "status" => "error", "message" => "Error al enviar: " . $e->getMessage()];

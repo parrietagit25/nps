@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- Insert default admin user (password: admin123)
 INSERT INTO users (username, email, password_hash, full_name, role) VALUES
-('admin', 'admin@nps.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrador', 'admin')
+('admin', 'admin@nps.com', '$2y$10$RL9s38HLWdRIaTgCEgKU.eER1rL4XMG3ydVBdopcqb/4X/xjknvO6', 'Administrador', 'admin')
 ON DUPLICATE KEY UPDATE 
     email = VALUES(email),
     password_hash = VALUES(password_hash),
@@ -68,9 +68,9 @@ ON DUPLICATE KEY UPDATE
 -- Insert default settings
 INSERT INTO settings (setting_key, setting_value, description) VALUES
 ('site_name', 'NPS Survey System', 'Nombre del sitio'),
-('site_description', 'Sistema de encuestas Net Promoter Score', 'Descripción del sitio'),
-('default_campaign_duration', '30', 'Duración por defecto de campañas en días'),
-('max_feedback_length', '1000', 'Longitud máxima de feedback en caracteres'),
+('site_description', 'Sistema de encuestas Net Promoter Score', 'Descripcion del sitio'),
+('default_campaign_duration', '30', 'Duracion por defecto de campañas en días'),
+('max_feedback_length', '1000', 'Longitud maxima de feedback en caracteres'),
 ('enable_ip_tracking', '1', 'Habilitar seguimiento de IP'),
 ('enable_user_agent_tracking', '1', 'Habilitar seguimiento de User Agent'),
 ('detractor_threshold', '6', 'Umbral para detractores (0-6)'),
