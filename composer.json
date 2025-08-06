@@ -1,6 +1,7 @@
 {
     "require": {
-        "phpmailer/phpmailer": "^6.10"
+        "phpmailer/phpmailer": "^6.10",
+        "sendgrid/sendgrid": "^8.0"
     },
     "config": {
         "optimize-autoloader": true,

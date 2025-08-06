@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once '../config/database.php';
-require_once '../config/phpmailer_outlook.php';
+require_once '../config/sendgrid.php';
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
         $messageType = 'danger';
     } else {
         try {
-            $phpmailer_outlook = new PHPMailerOutlookService();
-            $result = $phpmailer_outlook->sendSurveyToMultipleRecipients($campaign_id, $emails, $campaign);
+            $sendgrid_service = new SendGridService();
+            $result = $sendgrid_service->sendSurveyToMultipleRecipients($campaign_id, $emails, $campaign);
             
             if ($result) {
                 $message = "Envío completado: {$result['success']} exitosos, {$result['error']} errores de {$result['total']} total";
