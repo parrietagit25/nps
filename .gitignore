@@ -5,7 +5,7 @@
 .env.staging
 
 # Composer
-/vendor/
+# /vendor/  # Comentado para permitir subir dependencias
 composer.lock
 
 # IDE files
