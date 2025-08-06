@@ -1,8 +1,8 @@
 <?php
 session_start();
-require_once 'config/database.php';
-require_once 'config/env.php';
-require_once 'config/sendgrid.php';
+require_once 'src/config/database.php';
+require_once 'src/config/env.php';
+require_once 'src/config/sendgrid.php';
 
 $message = '';
 $messageType = '';
