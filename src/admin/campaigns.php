@@ -481,9 +481,9 @@ if ($conn) {
                         <button class="btn btn-primary me-2" onclick="shareOnWhatsApp()">
                             <i class="fab fa-whatsapp me-2"></i>WhatsApp
                         </button>
-                        <button class="btn btn-info me-2" onclick="shareOnEmail()">
+                        <a class="btn btn-info me-2" href="send_campaign.php?id=<?= $campaign['id'] ?>">
                             <i class="fas fa-envelope me-2"></i>Email
-                        </button>
+                        </a>
                     </div>
                 </div>
                 <div class="modal-footer">
