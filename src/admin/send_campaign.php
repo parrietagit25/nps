@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once '../config/database.php';
+require_once '../config/env.php';
 require_once '../config/sendgrid.php';
 
 $db = new Database();
