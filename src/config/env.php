@@ -36,7 +36,20 @@ error_log("ENV Debug - FROM_NAME: " . ($_ENV['FROM_NAME'] ?? 'NO_CONFIGURADA'));
 
 // Configuración por defecto para SendGrid (solo si no están configuradas)
 if (!isset($_ENV['SENDGRID_API_KEY']) || $_ENV['SENDGRID_API_KEY'] === 'SG.your-api-key-here') {
-    $_ENV['SENDGRID_API_KEY'] = 'SG.your-api-key-here';
+    // Intentar leer directamente del archivo .env
+    if (file_exists($envFile)) {
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos($line, 'SENDGRID_API_KEY=') === 0) {
+                $value = trim(substr($line, strlen('SENDGRID_API_KEY=')));
+                if (!empty($value) && $value !== 'SG.your-api-key-here') {
+                    $_ENV['SENDGRID_API_KEY'] = $value;
+                    error_log("ENV Debug - SENDGRID_API_KEY cargada directamente: " . $value);
+                    break;
+                }
+            }
+        }
+    }
 }
 
 if (!isset($_ENV['FROM_EMAIL'])) {
