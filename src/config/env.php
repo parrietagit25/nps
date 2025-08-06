@@ -2,8 +2,11 @@
 // Cargar variables de entorno desde archivo .env
 function loadEnv($path) {
     if (!file_exists($path)) {
+        error_log("ENV Debug - Archivo .env no encontrado en: " . $path);
         return false;
     }
+    
+    error_log("ENV Debug - Archivo .env encontrado en: " . $path);
     
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
@@ -17,45 +20,19 @@ function loadEnv($path) {
         
         if (!array_key_exists($name, $_ENV)) {
             $_ENV[$name] = $value;
+            error_log("ENV Debug - Variable cargada: " . $name . " = " . $value);
         }
     }
     
     return true;
 }
 
-// Cargar variables de entorno
+// Cargar variables de entorno directamente desde .env
 $envFile = __DIR__ . '/../../.env';
-if (file_exists($envFile)) {
-    loadEnv($envFile);
-}
+loadEnv($envFile);
 
-// Debug: Mostrar variables cargadas
+// Verificar variables específicas
 error_log("ENV Debug - SENDGRID_API_KEY: " . ($_ENV['SENDGRID_API_KEY'] ?? 'NO_CONFIGURADA'));
 error_log("ENV Debug - FROM_EMAIL: " . ($_ENV['FROM_EMAIL'] ?? 'NO_CONFIGURADA'));
 error_log("ENV Debug - FROM_NAME: " . ($_ENV['FROM_NAME'] ?? 'NO_CONFIGURADA'));
-
-// Configuración por defecto para SendGrid (solo si no están configuradas)
-if (!isset($_ENV['SENDGRID_API_KEY']) || $_ENV['SENDGRID_API_KEY'] === 'SG.your-api-key-here') {
-    // Intentar leer directamente del archivo .env
-    if (file_exists($envFile)) {
-        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (strpos($line, 'SENDGRID_API_KEY=') === 0) {
-                $value = trim(substr($line, strlen('SENDGRID_API_KEY=')));
-                if (!empty($value) && $value !== 'SG.your-api-key-here') {
-                    $_ENV['SENDGRID_API_KEY'] = $value;
-                    error_log("ENV Debug - SENDGRID_API_KEY cargada directamente: " . $value);
-                    break;
-                }
-            }
-        }
-    }
-}
-
-if (!isset($_ENV['FROM_EMAIL'])) {
-    $_ENV['FROM_EMAIL'] = 'notificaciones@grupopcr.com.pa';
-}
-
-if (!isset($_ENV['FROM_NAME'])) {
-    $_ENV['FROM_NAME'] = 'PCR notificaciones';
-}
+?>
