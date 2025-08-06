@@ -22,7 +22,7 @@ COPY . /var/www/html/
 
 # Instalar dependencias de Composer
 WORKDIR /var/www/html
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/html

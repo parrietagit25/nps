@@ -32,9 +32,8 @@ Thumbs.db
 # Node modules (if any)
 node_modules/
 
-# Composer
+# Composer (excluir vendor pero permitir composer.json y composer.lock)
 vendor/
-composer.lock
 
 # Environment files
 .env
