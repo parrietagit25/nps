@@ -122,7 +122,7 @@ class PHPMailerService {
      * Generar URL de la encuesta
      */
     private function generateSurveyUrl($campaign_id) {
-        $base_url = getenv('BASE_URL') ?: 'http://nps.grupopcr.com.pa';
+        $base_url = 'http://nps.grupopcr.com.pa';
         return $base_url . '/survey.php?id=' . $campaign_id;
     }
 
@@ -150,7 +150,7 @@ class PHPMailerService {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="' . $survey_url . '" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px; display: inline-block;">Participar en la Encuesta</a>
+                <a href="' . $survey_url . '" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 18px 35px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 18px; display: inline-block; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease;">🚀 Participar en la Encuesta</a>
             </div>
             
             <div style="background: #e9ecef; padding: 20px; border-radius: 8px; margin-top: 25px;">
