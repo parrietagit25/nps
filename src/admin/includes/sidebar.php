@@ -24,9 +24,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-users me-2"></i>
             Usuarios
         </a>
-        <a class="nav-link <?= $current_page == 'send_campaign.php' ? 'active' : '' ?>" href="send_campaign.php">
+        <a class="nav-link <?= $current_page == '#' ? 'active' : '' ?>" href="#">
             <i class="fas fa-envelope me-2"></i>
-            Enviar Encuestas
+            Reportes
         </a>
         <hr class="text-white-50">
         <a class="nav-link" href="logout.php">
