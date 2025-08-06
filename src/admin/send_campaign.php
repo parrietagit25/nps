@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once '../config/database.php';
-require_once '../config/sendgrid.php';
+require_once '../config/phpmailer.php';
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
         $messageType = 'danger';
     } else {
         try {
-            $sendgrid = new SendGridService();
-            $result = $sendgrid->sendSurveyToMultipleRecipients($campaign_id, $emails, $campaign);
+            $phpmailer = new PHPMailerService();
+            $result = $phpmailer->sendSurveyToMultipleRecipients($campaign_id, $emails, $campaign);
             
             $message = "Envío completado: {$result['success']} exitosos, {$result['error']} errores de {$result['total']} total";
             $messageType = $result['error'] > 0 ? 'warning' : 'success';

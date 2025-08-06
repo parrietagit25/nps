@@ -1,23 +1,33 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use SendGrid\Mail\Mail;
-use SendGrid;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
-class SendGridService {
-    private $sendgrid;
+class PHPMailerService {
+    private $mailer;
     private $from_email;
     private $from_name;
 
     public function __construct() {
-        $api_key = getenv('SENDGRID_API_KEY');
-        if (!$api_key) {
-            throw new Exception('SENDGRID_API_KEY no está configurada');
-        }
+        $this->mailer = new PHPMailer(true);
         
-        $this->sendgrid = new SendGrid($api_key);
-        $this->from_email = getenv('FROM_EMAIL') ?: 'noreply@nps.com';
-        $this->from_name = getenv('FROM_NAME') ?: 'NPS Survey System';
+        // Configuración SMTP
+        $this->mailer->isSMTP();
+        $this->mailer->Host = 'smtp.gmail.com'; // o el servidor SMTP correspondiente
+        $this->mailer->SMTPAuth = true;
+        $this->mailer->Username = 'notificaciones@grupopcr.com.pa';
+        $this->mailer->Password = 'ghhpsqstqbfyscpc';
+        $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $this->mailer->Port = 587;
+        $this->mailer->CharSet = 'UTF-8';
+        
+        // Configuración del remitente
+        $this->from_email = 'notificaciones@grupopcr.com.pa';
+        $this->from_name = 'NPS Survey System';
+        
+        $this->mailer->setFrom($this->from_email, $this->from_name);
     }
 
     /**
@@ -71,44 +81,39 @@ class SendGridService {
      * Enviar encuesta NPS a un destinatario
      */
     public function sendSurveyEmail($campaign_id, $to_email, $campaign_data) {
-        $survey_url = $this->generateSurveyUrl($campaign_id);
-        
-        $email = new Mail();
-        $email->setFrom($this->from_email, $this->from_name);
-        $email->setSubject($campaign_data['name']);
-        $email->addTo($to_email);
-        
-        // Contenido HTML del correo
-        $html_content = $this->generateEmailHTML($campaign_data, $survey_url);
-        $email->addContent("text/html", $html_content);
-        
-        // Contenido texto plano
-        $text_content = $this->generateEmailText($campaign_data, $survey_url);
-        $email->addContent("text/plain", $text_content);
-
         try {
-            $response = $this->sendgrid->send($email);
+            $survey_url = $this->generateSurveyUrl($campaign_id);
             
-            if ($response->statusCode() >= 200 && $response->statusCode() < 300) {
-                return [
-                    'email' => $to_email,
-                    'status' => 'success',
-                    'message' => 'Email enviado correctamente',
-                    'message_id' => $response->headers()['X-Message-Id'] ?? null
-                ];
-            } else {
-                return [
-                    'email' => $to_email,
-                    'status' => 'error',
-                    'message' => 'Error al enviar: ' . $response->statusCode(),
-                    'body' => $response->body()
-                ];
-            }
+            // Limpiar destinatarios anteriores
+            $this->mailer->clearAddresses();
+            
+            // Configurar destinatario
+            $this->mailer->addAddress($to_email);
+            $this->mailer->Subject = $campaign_data['name'];
+            
+            // Contenido HTML del correo
+            $html_content = $this->generateEmailHTML($campaign_data, $survey_url);
+            $this->mailer->isHTML(true);
+            $this->mailer->Body = $html_content;
+            
+            // Contenido texto plano
+            $text_content = $this->generateEmailText($campaign_data, $survey_url);
+            $this->mailer->AltBody = $text_content;
+
+            // Enviar email
+            $this->mailer->send();
+            
+            return [
+                'email' => $to_email,
+                'status' => 'success',
+                'message' => 'Email enviado correctamente'
+            ];
+            
         } catch (Exception $e) {
             return [
                 'email' => $to_email,
                 'status' => 'error',
-                'message' => 'Excepción: ' . $e->getMessage()
+                'message' => 'Error al enviar: ' . $e->getMessage()
             ];
         }
     }
@@ -117,7 +122,7 @@ class SendGridService {
      * Generar URL de la encuesta
      */
     private function generateSurveyUrl($campaign_id) {
-        $base_url = getenv('BASE_URL') ?: 'http://nps.grupopcr.com.pa:8082';
+        $base_url = getenv('BASE_URL') ?: 'http://nps.grupopcr.com.pa';
         return $base_url . '/survey.php?id=' . $campaign_id;
     }
 
