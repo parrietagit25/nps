@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
-# Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \
+# Instalar dependencias del sistema de forma más eficiente
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     libpng-dev \
@@ -9,7 +9,9 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -17,12 +19,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Habilitar mod_rewrite
 RUN a2enmod rewrite
 
-# Copiar archivos del proyecto
-COPY . /var/www/html/
+# Copiar solo los archivos necesarios primero
+COPY composer.json composer.lock* ./
 
 # Instalar dependencias de Composer
-WORKDIR /var/www/html
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+# Copiar el resto de archivos del proyecto
+COPY . .
 
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/html
