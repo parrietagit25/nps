@@ -2,11 +2,11 @@
 // Cargar variables de entorno desde archivo .env
 function loadEnv($path) {
     if (!file_exists($path)) {
-        error_log("ENV Debug - Archivo .env no encontrado en: " . $path);
+        error_log("ENV Debug - Archivo .env NO encontrado en: " . $path);
         return false;
     }
     
-    error_log("ENV Debug - Archivo .env encontrado en: " . $path);
+    error_log("ENV Debug - Archivo .env ENCONTRADO en: " . $path);
     
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
