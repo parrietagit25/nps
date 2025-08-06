@@ -77,30 +77,8 @@ if ($campaign_id && $conn) {
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <link rel="stylesheet" href="includes/sidebar.css">
     <style>
-        .sidebar {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            margin: 0.25rem 0;
-        }
-        
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .main-content {
-            background: #f8f9fa;
-            min-height: 100vh;
-        }
-        
         .card {
             border: none;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
@@ -148,31 +126,7 @@ if ($campaign_id && $conn) {
         <div class="row">
             <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 px-0">
-                <div class="sidebar p-3">
-                    <h4 class="text-white mb-4">
-                        <i class="fas fa-chart-line me-2"></i>
-                        NPS System
-                    </h4>
-                    
-                    <nav class="nav flex-column">
-                        <a class="nav-link" href="dashboard.php">
-                            <i class="fas fa-tachometer-alt me-2"></i>
-                            Dashboard
-                        </a>
-                        <a class="nav-link" href="campaigns.php">
-                            <i class="fas fa-bullhorn me-2"></i>
-                            Campañas
-                        </a>
-                        <a class="nav-link" href="users.php">
-                            <i class="fas fa-users me-2"></i>
-                            Usuarios
-                        </a>
-                        <a class="nav-link" href="logout.php">
-                            <i class="fas fa-sign-out-alt me-2"></i>
-                            Cerrar Sesión
-                        </a>
-                    </nav>
-                </div>
+                <?php include 'includes/sidebar.php'; ?>
             </div>
             
             <!-- Main Content -->
