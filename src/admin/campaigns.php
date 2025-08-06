@@ -602,9 +602,9 @@ if ($conn) {
             window.open(mailtoUrl);
         }
         
-        // Función para ver respuestas (placeholder)
+        // Función para ver respuestas
         function viewResponses(campaignId) {
-            alert('Función de ver respuestas próximamente');
+            window.location.href = `responses.php?id=${campaignId}`;
         }
         
         // Establecer fecha mínima para end_date
