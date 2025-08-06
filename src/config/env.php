@@ -28,7 +28,7 @@ function loadEnv($path) {
 }
 
 // Cargar variables de entorno directamente desde .env
-$envFile = __DIR__ . '/../../.env';
+$envFile = __DIR__ . '/../.env';
 loadEnv($envFile);
 
 // Verificar variables específicas
