@@ -271,6 +271,9 @@ if ($conn) {
                                                 <li><a class="dropdown-item" href="#" onclick="viewResponses(<?= $campaign['id'] ?>)">
                                                     <i class="fas fa-chart-bar me-2"></i>Ver Respuestas
                                                 </a></li>
+                                                <li><a class="dropdown-item" href="send_campaign.php?id=<?= $campaign['id'] ?>">
+                                                    <i class="fas fa-envelope me-2"></i>Enviar por Email
+                                                </a></li>
                                                 <li><a class="dropdown-item" href="#" onclick="getShareLink(<?= $campaign['id'] ?>)">
                                                     <i class="fas fa-share me-2"></i>Compartir
                                                 </a></li>

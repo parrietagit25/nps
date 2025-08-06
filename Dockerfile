@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# Install system dependencies
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -9,28 +9,28 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Install Composer
+# Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Enable Apache mod_rewrite
+# Habilitar mod_rewrite
 RUN a2enmod rewrite
 
-# Set working directory
+# Copiar archivos del proyecto
+COPY . /var/www/html/
+
+# Instalar dependencias de Composer
 WORKDIR /var/www/html
+RUN composer install --no-dev --optimize-autoloader
 
-# Copy existing application directory contents
-COPY ./src /var/www/html
+# Configurar permisos
+RUN chown -R www-data:www-data /var/www/html
 
-# Copy existing application directory permissions
-COPY --chown=www-data:www-data ./src /var/www/html
-
-# Change current user to www
+# Cambiar usuario actual a www
 USER www-data
 
-# Expose port 80
+# Exponer puerto 80
 EXPOSE 80
 
 CMD ["apache2-foreground"] 

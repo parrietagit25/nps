@@ -19,6 +19,10 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-nps_db}
       - MYSQL_USER=${MYSQL_USER:-nps_user}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-nps_password}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@nps.com}
+      - FROM_NAME=${FROM_NAME:-NPS Survey System}
+      - BASE_URL=${BASE_URL:-http://nps.grupopcr.com.pa:8082}
     networks:
       - nps_network
 
@@ -67,6 +71,7 @@ services:
       - PMA_ABSOLUTE_URI_DISCOVER_8=0
       - PMA_ABSOLUTE_URI_DISCOVER_9=0
       - PMA_ABSOLUTE_URI_DISCOVER_10=0
+      - PMA_ABSOLUTE_URI_DISCOVER=true
     depends_on:
       - mysql
     networks:
