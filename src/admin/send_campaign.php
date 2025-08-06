@@ -8,7 +8,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once '../config/database.php';
-require_once '../config/phpmailer.php';
 require_once '../config/phpmailer_outlook.php';
 
 $db = new Database();
@@ -38,27 +37,14 @@ if ($campaign_id && $conn) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
     $emails_text = $_POST['emails'] ?? '';
     $emails = array_filter(array_map('trim', explode("\n", $emails_text)));
-    $email_service = $_POST['email_service'] ?? 'phpmailer';
     
     if (empty($emails)) {
         $message = 'Por favor ingresa al menos un email';
         $messageType = 'danger';
     } else {
         try {
-            $result = null;
-            
-            switch ($email_service) {
-                case 'phpmailer_outlook':
-                    $phpmailer_outlook = new PHPMailerOutlookService();
-                    $result = $phpmailer_outlook->sendSurveyToMultipleRecipients($campaign_id, $emails, $campaign);
-                    break;
-                    
-                case 'phpmailer':
-                default:
-                    $phpmailer = new PHPMailerService();
-                    $result = $phpmailer->sendSurveyToMultipleRecipients($campaign_id, $emails, $campaign);
-                    break;
-            }
+            $phpmailer_outlook = new PHPMailerOutlookService();
+            $result = $phpmailer_outlook->sendSurveyToMultipleRecipients($campaign_id, $emails, $campaign);
             
             if ($result) {
                 $message = "Envío completado: {$result['success']} exitosos, {$result['error']} errores de {$result['total']} total";
@@ -192,20 +178,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
                                     </div>
                                     <div class="card-body">
                                         <form method="POST" id="emailForm">
-                                            <div class="mb-3">
-                                                <label for="email_service" class="form-label">
-                                                    <i class="fas fa-cog me-2"></i>
-                                                    Servicio de Email
-                                                </label>
-                                                <select class="form-select" id="email_service" name="email_service">
-                                                    <option value="phpmailer">PHPMailer (Gmail)</option>
-                                                    <option value="phpmailer_outlook">PHPMailer (Outlook)</option>
-                                                </select>
-                                                <div class="form-text">
-                                                    Selecciona el servicio de email que deseas usar para enviar las encuestas.
-                                                </div>
-                                            </div>
-                                            
                                             <div class="mb-3">
                                                 <label for="emails" class="form-label">
                                                     <i class="fas fa-envelope me-2"></i>
