@@ -24,8 +24,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-users me-2"></i>
             Usuarios
         </a>
-        <a class="nav-link <?= $current_page == '#' ? 'active' : '' ?>" href="#">
-            <i class="fas fa-envelope me-2"></i>
+        <a class="nav-link <?= $current_page == 'reports.php' ? 'active' : '' ?>" href="reports.php">
+            <i class="fas fa-chart-bar me-2"></i>
             Reportes
         </a>
         <hr class="text-white-50">
