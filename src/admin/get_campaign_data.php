@@ -36,6 +36,15 @@ try {
     $stmt->execute([$campaign_id]);
     $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Decodificar las opciones JSON para cada pregunta
+    foreach ($questions as &$question) {
+        if (isset($question['options']) && $question['options']) {
+            $question['options'] = json_decode($question['options'], true);
+        } else {
+            $question['options'] = [];
+        }
+    }
+    
     echo json_encode([
         'success' => true,
         'campaign' => $campaign,

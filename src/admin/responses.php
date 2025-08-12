@@ -32,7 +32,7 @@ if ($campaign_id && $conn) {
                 cq.question_type
             FROM survey_responses sr
             JOIN campaign_questions cq ON sr.question_id = cq.id
-            WHERE sr.campaign_id = ? AND sr.response_score IS NOT NULL
+            WHERE sr.campaign_id = ?
             ORDER BY sr.created_at DESC
         ");
         $stmt->execute([$campaign_id]);
@@ -291,30 +291,45 @@ if ($campaign_id && $conn) {
                                                 <div class="col-md-2">
                                                     <?php 
                                                     $score = $response['score'] ?? $response['response_score'] ?? 0;
+                                                    $questionType = $response['question_type'] ?? 'nps';
+                                                    
                                                     if ($score > 0):
                                                     ?>
                                                         <span class="score-badge score-<?= $score >= 9 ? 'promoter' : ($score >= 7 ? 'passive' : 'detractor') ?>">
                                                             <?= $score ?>/10
                                                         </span>
-                                                    <?php else: ?>
+                                                    <?php elseif ($questionType === 'multiple_choice'): ?>
+                                                        <span class="score-badge score-text">Opción</span>
+                                                    <?php elseif ($questionType === 'text'): ?>
                                                         <span class="score-badge score-text">Texto</span>
+                                                    <?php else: ?>
+                                                        <span class="score-badge score-text">N/A</span>
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="col-md-4">
                                                     <?php 
                                                     $comment = $response['comment'] ?? $response['response_text'] ?? '';
-                                                    if ($comment): ?>
+                                                    $responseValue = $response['response_value'] ?? '';
+                                                    
+                                                    if ($questionType === 'multiple_choice' && $responseValue): ?>
+                                                        <p class="mb-1"><strong>Respuesta:</strong></p>
+                                                        <p class="mb-0"><?= htmlspecialchars($responseValue) ?></p>
+                                                    <?php elseif ($comment): ?>
                                                         <p class="mb-1"><strong>Comentario:</strong></p>
                                                         <p class="mb-0"><?= htmlspecialchars($comment) ?></p>
                                                     <?php else: ?>
-                                                        <p class="text-muted mb-0">Sin comentario</p>
+                                                        <p class="text-muted mb-0">Sin respuesta</p>
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="col-md-3">
+                                                    <?php if ($response['question_text']): ?>
+                                                        <p class="mb-1"><strong>Pregunta:</strong></p>
+                                                        <p class="mb-0 small"><?= htmlspecialchars($response['question_text']) ?></p>
+                                                    <?php endif; ?>
                                                     <?php if ($response['email']): ?>
-                                                        <p class="mb-0"><strong>Email:</strong> <?= htmlspecialchars($response['email']) ?></p>
+                                                        <p class="mb-0 mt-2"><strong>Email:</strong> <?= htmlspecialchars($response['email']) ?></p>
                                                     <?php else: ?>
-                                                        <p class="text-muted mb-0">Sin email</p>
+                                                        <p class="text-muted mb-0 mt-2">Sin email</p>
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="col-md-3 text-end">

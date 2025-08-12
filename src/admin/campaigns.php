@@ -39,16 +39,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Insertar preguntas
                 $questions = json_decode($_POST['questions'], true);
                 if ($questions && is_array($questions)) {
-                    $stmt = $conn->prepare("INSERT INTO campaign_questions (campaign_id, question_text, question_type, is_required, order_index) VALUES (?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO campaign_questions (campaign_id, question_text, question_type, is_required, order_index, options) VALUES (?, ?, ?, ?, ?, ?)");
                     
                     foreach ($questions as $index => $question) {
                         if (!empty($question['text'])) {
+                            $options = null;
+                            if (isset($question['options']) && is_array($question['options'])) {
+                                $options = json_encode($question['options']);
+                            }
+                            
                             $stmt->execute([
                                 $campaign_id,
                                 trim($question['text']),
                                 $question['type'] ?? 'nps',
                                 isset($question['required']) ? 1 : 0,
-                                $index + 1
+                                $index + 1,
+                                $options
                             ]);
                         }
                     }
@@ -88,16 +94,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $stmt->execute([$campaign_id]);
                     
                     // Insertar nuevas preguntas
-                    $stmt = $conn->prepare("INSERT INTO campaign_questions (campaign_id, question_text, question_type, is_required, order_index) VALUES (?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO campaign_questions (campaign_id, question_text, question_type, is_required, order_index, options) VALUES (?, ?, ?, ?, ?, ?)");
                     
                     foreach ($questions as $index => $question) {
                         if (!empty($question['text'])) {
+                            $options = null;
+                            if (isset($question['options']) && is_array($question['options'])) {
+                                $options = json_encode($question['options']);
+                            }
+                            
                             $stmt->execute([
                                 $campaign_id,
                                 trim($question['text']),
                                 $question['type'] ?? 'nps',
                                 isset($question['required']) ? 1 : 0,
-                                $index + 1
+                                $index + 1,
+                                $options
                             ]);
                         }
                     }
@@ -240,6 +252,31 @@ if ($conn) {
         
         .status-badge {
             font-size: 0.8rem;
+        }
+        
+        .options-container {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+        }
+        
+        .option-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .option-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .option-text {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        
+        .option-item .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
         }
     </style>
 </head>
@@ -440,7 +477,7 @@ if ($conn) {
                                             <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." required>
                                         </div>
                                         <div class="col-md-2">
-                                            <select class="form-select question-type">
+                                            <select class="form-select question-type" onchange="toggleOptionsField(this)">
                                                 <option value="nps">NPS</option>
                                                 <option value="rating">Rating</option>
                                                 <option value="text">Texto</option>
@@ -448,11 +485,40 @@ if ($conn) {
                                             </select>
                                         </div>
                                         <div class="col-md-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input question-required" type="checkbox" checked>
-                                                <label class="form-check-label">Requerida</label>
+                                            <div class="d-flex align-items-center">
+                                                <div class="form-check me-2">
+                                                    <input class="form-check-input question-required" type="checkbox" checked>
+                                                    <label class="form-check-label">Requerida</label>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeQuestion(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="options-container mt-2" style="display: none;">
+                                        <label class="form-label">Opciones de respuesta:</label>
+                                        <div class="options-list">
+                                            <div class="option-item mb-2">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control option-text" placeholder="Opción 1" required>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="option-item mb-2">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control option-text" placeholder="Opción 2" required>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addOption(this)">
+                                            <i class="fas fa-plus me-1"></i>Agregar Opción
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -740,7 +806,7 @@ if ($conn) {
                         <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." required>
                     </div>
                     <div class="col-md-2">
-                        <select class="form-select question-type">
+                        <select class="form-select question-type" onchange="toggleOptionsField(this)">
                             <option value="nps">NPS</option>
                             <option value="rating">Rating</option>
                             <option value="text">Texto</option>
@@ -758,6 +824,30 @@ if ($conn) {
                             </button>
                         </div>
                     </div>
+                </div>
+                <div class="options-container mt-2" style="display: none;">
+                    <label class="form-label">Opciones de respuesta:</label>
+                    <div class="options-list">
+                        <div class="option-item mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control option-text" placeholder="Opción 1" required>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="option-item mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control option-text" placeholder="Opción 2" required>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addOption(this)">
+                        <i class="fas fa-plus me-1"></i>Agregar Opción
+                    </button>
                 </div>
             `;
             
@@ -788,7 +878,7 @@ if ($conn) {
                                 <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." value="${question.question_text}" required>
                             </div>
                             <div class="col-md-2">
-                                <select class="form-select question-type">
+                                <select class="form-select question-type" onchange="toggleOptionsField(this)">
                                     <option value="nps" ${question.question_type === 'nps' ? 'selected' : ''}>NPS</option>
                                     <option value="rating" ${question.question_type === 'rating' ? 'selected' : ''}>Rating</option>
                                     <option value="text" ${question.question_type === 'text' ? 'selected' : ''}>Texto</option>
@@ -806,6 +896,15 @@ if ($conn) {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                        <div class="options-container mt-2" style="display: ${question.question_type === 'multiple_choice' ? 'block' : 'none'};">
+                            <label class="form-label">Opciones de respuesta:</label>
+                            <div class="options-list">
+                                ${generateOptionsHTML(question.options)}
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addOption(this)">
+                                <i class="fas fa-plus me-1"></i>Agregar Opción
+                            </button>
                         </div>
                     `;
                     container.appendChild(questionDiv);
@@ -827,7 +926,7 @@ if ($conn) {
                         <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." required>
                     </div>
                     <div class="col-md-2">
-                        <select class="form-select question-type">
+                        <select class="form-select question-type" onchange="toggleOptionsField(this)">
                             <option value="nps">NPS</option>
                             <option value="rating">Rating</option>
                             <option value="text">Texto</option>
@@ -846,6 +945,30 @@ if ($conn) {
                         </div>
                     </div>
                 </div>
+                <div class="options-container mt-2" style="display: none;">
+                    <label class="form-label">Opciones de respuesta:</label>
+                    <div class="options-list">
+                        <div class="option-item mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control option-text" placeholder="Opción 1" required>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="option-item mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control option-text" placeholder="Opción 2" required>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addOption(this)">
+                        <i class="fas fa-plus me-1"></i>Agregar Opción
+                    </button>
+                </div>
             `;
             container.appendChild(questionDiv);
         }
@@ -858,6 +981,124 @@ if ($conn) {
             } else {
                 alert('Debe haber al menos una pregunta');
             }
+        }
+        
+        // Función para mostrar/ocultar campo de opciones según el tipo de pregunta
+        function toggleOptionsField(selectElement) {
+            const questionItem = selectElement.closest('.question-item');
+            const optionsContainer = questionItem.querySelector('.options-container');
+            const questionType = selectElement.value;
+            
+            if (questionType === 'multiple_choice') {
+                optionsContainer.style.display = 'block';
+                // Hacer las opciones requeridas
+                const optionInputs = optionsContainer.querySelectorAll('.option-text');
+                optionInputs.forEach(input => input.required = true);
+            } else {
+                optionsContainer.style.display = 'none';
+                // Quitar el required de las opciones y limpiar valores
+                const optionInputs = optionsContainer.querySelectorAll('.option-text');
+                optionInputs.forEach(input => {
+                    input.required = false;
+                    input.value = '';
+                });
+            }
+        }
+        
+        // Función para agregar opción en preguntas de opción múltiple
+        function addOption(button) {
+            const optionsList = button.previousElementSibling;
+            const optionCount = optionsList.children.length + 1;
+            
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option-item mb-2';
+            optionDiv.innerHTML = `
+                <div class="input-group">
+                    <input type="text" class="form-control option-text" placeholder="Opción ${optionCount}" required>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            optionsList.appendChild(optionDiv);
+            
+            // Actualizar el placeholder del botón para mostrar el siguiente número
+            const nextOptionCount = optionCount + 1;
+            button.innerHTML = `<i class="fas fa-plus me-1"></i>Agregar Opción ${nextOptionCount}`;
+        }
+        
+        // Función para eliminar opción en preguntas de opción múltiple
+        function removeOption(button) {
+            const optionItem = button.closest('.option-item');
+            const optionsList = optionItem.parentElement;
+            
+            // No permitir eliminar si solo quedan 2 opciones
+            if (optionsList.children.length > 2) {
+                optionItem.remove();
+                
+                // Actualizar el texto del botón de agregar opción
+                const addButton = optionsList.nextElementSibling;
+                const nextOptionCount = optionsList.children.length + 1;
+                addButton.innerHTML = `<i class="fas fa-plus me-1"></i>Agregar Opción ${nextOptionCount}`;
+            } else {
+                alert('Debe haber al menos 2 opciones');
+            }
+        }
+        
+        // Función para generar HTML de opciones para preguntas existentes
+        function generateOptionsHTML(options) {
+            if (!options || !Array.isArray(options)) {
+                return `
+                    <div class="option-item mb-2">
+                        <div class="input-group">
+                            <input type="text" class="form-control option-text" placeholder="Opción 1" required>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="option-item mb-2">
+                        <div class="input-group">
+                            <input type="text" class="form-control option-text" placeholder="Opción 2" required>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            let html = '';
+            options.forEach((option, index) => {
+                html += `
+                    <div class="option-item mb-2">
+                        <div class="input-group">
+                            <input type="text" class="form-control option-text" placeholder="Opción ${index + 1}" value="${option}" required>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Asegurar que siempre haya al menos 2 opciones
+            while (options.length < 2) {
+                html += `
+                    <div class="option-item mb-2">
+                        <div class="input-group">
+                            <input type="text" class="form-control option-text" placeholder="Opción ${options.length + 1}" required>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                options.push('');
+            }
+            
+            return html;
         }
         
         // Función para recolectar todas las preguntas antes de enviar el formulario
@@ -880,11 +1121,34 @@ if ($conn) {
                     const required = item.querySelector('.question-required').checked;
                     
                     if (text) {
-                        questions.push({
+                        const questionData = {
                             text: text,
                             type: type,
                             required: required
-                        });
+                        };
+                        
+                        // Si es pregunta de opción múltiple, agregar las opciones
+                        if (type === 'multiple_choice') {
+                            const options = [];
+                            const optionInputs = item.querySelectorAll('.option-text');
+                            optionInputs.forEach(input => {
+                                const optionText = input.value.trim();
+                                if (optionText) {
+                                    options.push(optionText);
+                                }
+                            });
+                            
+                            // Validar que haya al menos 2 opciones
+                            if (options.length < 2) {
+                                e.preventDefault();
+                                alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
+                                return false;
+                            }
+                            
+                            questionData.options = options;
+                        }
+                        
+                        questions.push(questionData);
                     }
                 });
                 
