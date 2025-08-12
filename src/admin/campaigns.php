@@ -30,14 +30,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         try {
             $conn->beginTransaction();
             
+            // Debug: Verificar datos recibidos
+            error_log("Datos de campaña recibidos: " . print_r($_POST, true));
+            
             // Insertar campaña
             $stmt = $conn->prepare("INSERT INTO campaigns (name, description, start_date, end_date, is_active, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
             
             if ($stmt->execute([$name, $description, $start_date, $end_date, $is_active, $_SESSION['user_id']])) {
                 $campaign_id = $conn->lastInsertId();
+                error_log("Campaña creada con ID: " . $campaign_id);
                 
                 // Insertar preguntas
                 $questions = json_decode($_POST['questions'], true);
+                error_log("Preguntas decodificadas: " . print_r($questions, true));
+                
                 if ($questions && is_array($questions)) {
                     $stmt = $conn->prepare("INSERT INTO campaign_questions (campaign_id, question_text, question_type, is_required, order_index, options) VALUES (?, ?, ?, ?, ?, ?)");
                     
@@ -56,13 +62,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 $index + 1,
                                 $options
                             ]);
+                            error_log("Pregunta insertada: " . $question['text']);
                         }
                     }
+                } else {
+                    error_log("No se recibieron preguntas válidas");
                 }
                 
                 $conn->commit();
                 $message = 'Campaña creada exitosamente';
                 $messageType = 'success';
+                error_log("Campaña creada exitosamente");
             } else {
                 throw new Exception('Error al crear la campaña');
             }
@@ -70,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $conn->rollBack();
             $message = 'Error al crear la campaña: ' . $e->getMessage();
             $messageType = 'danger';
+            error_log("Error al crear campaña: " . $e->getMessage());
         }
     } elseif ($action === 'update') {
         $campaign_id = $_POST['campaign_id'];
@@ -82,12 +93,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         try {
             $conn->beginTransaction();
             
+            // Debug: Verificar datos recibidos
+            error_log("Datos de actualización recibidos: " . print_r($_POST, true));
+            
             // Actualizar campaña
             $stmt = $conn->prepare("UPDATE campaigns SET name = ?, description = ?, start_date = ?, end_date = ?, is_active = ? WHERE id = ?");
             
             if ($stmt->execute([$name, $description, $start_date, $end_date, $is_active, $campaign_id])) {
                 // Actualizar preguntas
                 $questions = json_decode($_POST['questions'], true);
+                error_log("Preguntas de actualización decodificadas: " . print_r($questions, true));
+                
                 if ($questions && is_array($questions)) {
                     // Eliminar preguntas existentes
                     $stmt = $conn->prepare("DELETE FROM campaign_questions WHERE campaign_id = ?");
@@ -111,13 +127,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 $index + 1,
                                 $options
                             ]);
+                            error_log("Pregunta actualizada: " . $question['text']);
                         }
                     }
+                } else {
+                    error_log("No se recibieron preguntas válidas para actualización");
                 }
                 
                 $conn->commit();
                 $message = 'Campaña actualizada exitosamente';
                 $messageType = 'success';
+                error_log("Campaña actualizada exitosamente");
             } else {
                 throw new Exception('Error al actualizar la campaña');
             }
@@ -125,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $conn->rollBack();
             $message = 'Error al actualizar la campaña: ' . $e->getMessage();
             $messageType = 'danger';
+            error_log("Error al actualizar campaña: " . $e->getMessage());
         }
     } elseif ($action === 'delete') {
         $campaign_id = $_POST['campaign_id'];
@@ -470,6 +491,7 @@ if ($conn) {
                         
                         <div class="mb-3">
                             <label class="form-label">Preguntas de la Encuesta *</label>
+                            <input type="hidden" name="questions" id="questions" value="">
                             <div id="questionsContainer">
                                 <div class="question-item mb-3 p-3 border rounded">
                                     <div class="row">
@@ -594,6 +616,7 @@ if ($conn) {
                         
                         <div class="mb-3">
                             <label class="form-label">Preguntas de la Encuesta *</label>
+                            <input type="hidden" name="questions" id="edit_questions" value="">
                             <div id="editQuestionsContainer">
                                 <!-- Las preguntas se cargarán dinámicamente -->
                             </div>
@@ -1103,71 +1126,126 @@ if ($conn) {
         
         // Función para recolectar todas las preguntas antes de enviar el formulario
         // Solo aplicar a formularios que tengan preguntas (crear/editar campaña)
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                // Solo validar si el formulario tiene preguntas (es un formulario de campaña)
-                const questionItems = this.querySelectorAll('.question-item');
-                
-                // Si no hay preguntas, no es un formulario de campaña, continuar normalmente
-                if (questionItems.length === 0) {
-                    return true;
-                }
-                
-                const questions = [];
-                
-                questionItems.forEach((item, index) => {
-                    const text = item.querySelector('.question-text').value.trim();
-                    const type = item.querySelector('.question-type').value;
-                    const required = item.querySelector('.question-required').checked;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Formulario de creación de campaña
+            const createForm = document.querySelector('form[action=""]');
+            if (createForm) {
+                createForm.addEventListener('submit', function(e) {
+                    const questionItems = this.querySelectorAll('.question-item');
+                    if (questionItems.length === 0) return true;
                     
-                    if (text) {
-                        const questionData = {
-                            text: text,
-                            type: type,
-                            required: required
-                        };
+                    const questions = [];
+                    
+                    questionItems.forEach((item, index) => {
+                        const text = item.querySelector('.question-text').value.trim();
+                        const type = item.querySelector('.question-type').value;
+                        const required = item.querySelector('.question-required').checked;
                         
-                        // Si es pregunta de opción múltiple, agregar las opciones
-                        if (type === 'multiple_choice') {
-                            const options = [];
-                            const optionInputs = item.querySelectorAll('.option-text');
-                            optionInputs.forEach(input => {
-                                const optionText = input.value.trim();
-                                if (optionText) {
-                                    options.push(optionText);
-                                }
-                            });
+                        if (text) {
+                            const questionData = {
+                                text: text,
+                                type: type,
+                                required: required
+                            };
                             
-                            // Validar que haya al menos 2 opciones
-                            if (options.length < 2) {
-                                e.preventDefault();
-                                alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
-                                return false;
+                            // Si es pregunta de opción múltiple, agregar las opciones
+                            if (type === 'multiple_choice') {
+                                const options = [];
+                                const optionInputs = item.querySelectorAll('.option-text');
+                                optionInputs.forEach(input => {
+                                    const optionText = input.value.trim();
+                                    if (optionText) {
+                                        options.push(optionText);
+                                    }
+                                });
+                                
+                                // Validar que haya al menos 2 opciones
+                                if (options.length < 2) {
+                                    e.preventDefault();
+                                    alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
+                                    return false;
+                                }
+                                
+                                questionData.options = options;
                             }
                             
-                            questionData.options = options;
+                            questions.push(questionData);
                         }
-                        
-                        questions.push(questionData);
+                    });
+                    
+                    if (questions.length === 0) {
+                        e.preventDefault();
+                        alert('Debe agregar al menos una pregunta');
+                        return false;
+                    }
+                    
+                    // Actualizar el campo oculto con las preguntas
+                    const questionsInput = this.querySelector('input[name="questions"]');
+                    if (questionsInput) {
+                        questionsInput.value = JSON.stringify(questions);
                     }
                 });
-                
-                if (questions.length === 0) {
-                    e.preventDefault();
-                    alert('Debe agregar al menos una pregunta');
-                    return false;
-                }
-                
-                // Crear campo oculto con las preguntas o usar el existente
-                let questionsInput = this.querySelector('input[name="questions"]');
-                if (!questionsInput) {
-                    questionsInput = document.createElement('input');
-                    questionsInput.type = 'hidden';
-                    questionsInput.name = 'questions';
-                    this.appendChild(questionsInput);
-                }
-                questionsInput.value = JSON.stringify(questions);
-            });
+            }
+            
+            // Formulario de edición de campaña
+            const editForm = document.querySelector('#editCampaignModal form');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    const questionItems = this.querySelectorAll('.question-item');
+                    if (questionItems.length === 0) return true;
+                    
+                    const questions = [];
+                    
+                    questionItems.forEach((item, index) => {
+                        const text = item.querySelector('.question-text').value.trim();
+                        const type = item.querySelector('.question-type').value;
+                        const required = item.querySelector('.question-required').checked;
+                        
+                        if (text) {
+                            const questionData = {
+                                text: text,
+                                type: type,
+                                required: required
+                            };
+                            
+                            // Si es pregunta de opción múltiple, agregar las opciones
+                            if (type === 'multiple_choice') {
+                                const options = [];
+                                const optionInputs = item.querySelectorAll('.option-text');
+                                optionInputs.forEach(input => {
+                                    const optionText = input.value.trim();
+                                    if (optionText) {
+                                        options.push(optionText);
+                                    }
+                                });
+                                
+                                // Validar que haya al menos 2 opciones
+                                if (options.length < 2) {
+                                    e.preventDefault();
+                                    alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
+                                    return false;
+                                }
+                                
+                                questionData.options = options;
+                            }
+                            
+                            questions.push(questionData);
+                        }
+                    });
+                    
+                    if (questions.length === 0) {
+                        e.preventDefault();
+                        alert('Debe agregar al menos una pregunta');
+                        return false;
+                    }
+                    
+                    // Actualizar el campo oculto con las preguntas
+                    const questionsInput = this.querySelector('input[name="questions"]');
+                    if (questionsInput) {
+                        questionsInput.value = JSON.stringify(questions);
+                    }
+                });
+            }
         });
     </script>
 </body>
