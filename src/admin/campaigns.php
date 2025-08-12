@@ -733,10 +733,18 @@ if ($conn) {
         }
         
         // Función para recolectar todas las preguntas antes de enviar el formulario
+        // Solo aplicar a formularios que tengan preguntas (crear/editar campaña)
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', function(e) {
-                const questions = [];
+                // Solo validar si el formulario tiene preguntas (es un formulario de campaña)
                 const questionItems = this.querySelectorAll('.question-item');
+                
+                // Si no hay preguntas, no es un formulario de campaña, continuar normalmente
+                if (questionItems.length === 0) {
+                    return true;
+                }
+                
+                const questions = [];
                 
                 questionItems.forEach((item, index) => {
                     const text = item.querySelector('.question-text').value.trim();
