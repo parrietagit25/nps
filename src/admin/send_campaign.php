@@ -176,8 +176,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $campaign) {
                                         <p class="text-muted"><?= htmlspecialchars($campaign['description']) ?></p>
                                         
                                         <div class="mb-3">
-                                            <strong>Pregunta:</strong><br>
-                                            <?= htmlspecialchars($campaign['question']) ?>
+                                            <strong>Preguntas:</strong><br>
+                                            <?php
+                                            // Obtener preguntas de la campaña
+                                            $stmt = $conn->prepare("SELECT question_text FROM campaign_questions WHERE campaign_id = ? ORDER BY order_index");
+                                            $stmt->execute([$campaign_id]);
+                                            $questions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                                            if ($questions) {
+                                                echo htmlspecialchars(implode('<br>', $questions));
+                                            } else {
+                                                echo 'Sin preguntas definidas';
+                                            }
+                                            ?>
                                         </div>
                                         
                                         <div class="mb-3">

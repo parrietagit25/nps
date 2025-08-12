@@ -527,9 +527,18 @@ if ($conn) {
                         </div>
                         
                         <div class="mb-3">
-                            <label for="edit_question" class="form-label">Pregunta NPS *</label>
-                            <textarea class="form-control" id="edit_question" name="question" rows="3" required></textarea>
+                            <label class="form-label">Preguntas de la Encuesta *</label>
+                            <div id="editQuestionsContainer">
+                                <!-- Las preguntas se cargarán dinámicamente -->
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addEditQuestion()">
+                                <i class="fas fa-plus me-1"></i>Agregar Pregunta
+                            </button>
+                            <div class="form-text">Agrega todas las preguntas que necesites para tu encuesta</div>
                         </div>
+                        
+                        <!-- Campo oculto para las preguntas -->
+                        <input type="hidden" name="questions" id="edit_questions">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -609,9 +618,41 @@ if ($conn) {
     <script>
         // Función para editar campaña
         function editCampaign(campaignId) {
-            // Aquí cargarías los datos de la campaña en el modal
-            document.getElementById('edit_campaign_id').value = campaignId;
-            new bootstrap.Modal(document.getElementById('editCampaignModal')).show();
+            // Cargar datos de la campaña usando AJAX
+            fetch('get_campaign_data.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'campaign_id=' + campaignId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const campaign = data.campaign;
+                    const questions = data.questions;
+                    
+                    // Llenar campos del formulario
+                    document.getElementById('edit_campaign_id').value = campaign.id;
+                    document.getElementById('edit_name').value = campaign.name;
+                    document.getElementById('edit_description').value = campaign.description;
+                    document.getElementById('edit_start_date').value = campaign.start_date;
+                    document.getElementById('edit_end_date').value = campaign.end_date;
+                    document.getElementById('edit_is_active').checked = campaign.is_active == 1;
+                    
+                    // Cargar preguntas
+                    loadEditQuestions(questions);
+                    
+                    // Mostrar modal
+                    new bootstrap.Modal(document.getElementById('editCampaignModal')).show();
+                } else {
+                    alert('Error al cargar los datos de la campaña: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cargar los datos de la campaña');
+            });
         }
         
         // Función para eliminar campaña
@@ -732,6 +773,93 @@ if ($conn) {
             }
         }
         
+        // Función para cargar preguntas en el modal de edición
+        function loadEditQuestions(questions) {
+            const container = document.getElementById('editQuestionsContainer');
+            container.innerHTML = '';
+            
+            if (questions && questions.length > 0) {
+                questions.forEach((question, index) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'question-item mb-3 p-3 border rounded';
+                    questionDiv.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." value="${question.question_text}" required>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select question-type">
+                                    <option value="nps" ${question.question_type === 'nps' ? 'selected' : ''}>NPS</option>
+                                    <option value="rating" ${question.question_type === 'rating' ? 'selected' : ''}>Rating</option>
+                                    <option value="text" ${question.question_type === 'text' ? 'selected' : ''}>Texto</option>
+                                    <option value="multiple_choice" ${question.question_type === 'multiple_choice' ? 'selected' : ''}>Opción Múltiple</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check me-2">
+                                        <input class="form-check-input question-required" type="checkbox" ${question.is_required == 1 ? 'checked' : ''}>
+                                        <label class="form-check-label">Requerida</label>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeEditQuestion(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(questionDiv);
+                });
+            } else {
+                // Agregar pregunta por defecto si no hay ninguna
+                addEditQuestion();
+            }
+        }
+        
+        // Función para agregar pregunta en el modal de edición
+        function addEditQuestion() {
+            const container = document.getElementById('editQuestionsContainer');
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-item mb-3 p-3 border rounded';
+            questionDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." required>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select question-type">
+                            <option value="nps">NPS</option>
+                            <option value="rating">Rating</option>
+                            <option value="text">Texto</option>
+                            <option value="multiple_choice">Opción Múltiple</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="d-flex align-items-center">
+                            <div class="form-check me-2">
+                                <input class="form-check-input question-required" type="checkbox" checked>
+                                <label class="form-check-label">Requerida</label>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeEditQuestion(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(questionDiv);
+        }
+        
+        // Función para eliminar pregunta en el modal de edición
+        function removeEditQuestion(button) {
+            const questionItem = button.closest('.question-item');
+            if (document.querySelectorAll('#editQuestionsContainer .question-item').length > 1) {
+                questionItem.remove();
+            } else {
+                alert('Debe haber al menos una pregunta');
+            }
+        }
+        
         // Función para recolectar todas las preguntas antes de enviar el formulario
         // Solo aplicar a formularios que tengan preguntas (crear/editar campaña)
         document.querySelectorAll('form').forEach(form => {
@@ -766,7 +894,7 @@ if ($conn) {
                     return false;
                 }
                 
-                // Crear campo oculto con las preguntas
+                // Crear campo oculto con las preguntas o usar el existente
                 let questionsInput = this.querySelector('input[name="questions"]');
                 if (!questionsInput) {
                     questionsInput = document.createElement('input');

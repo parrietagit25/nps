@@ -136,6 +136,7 @@ if ($campaign_id && $conn) {
         .score-promoter { background: #28a745; color: white; }
         .score-passive { background: #ffc107; color: #212529; }
         .score-detractor { background: #dc3545; color: white; }
+        .score-text { background: #6c757d; color: white; }
     </style>
 </head>
 <body>
@@ -174,7 +175,19 @@ if ($campaign_id && $conn) {
                                     <div class="col-md-8">
                                         <h4><?= htmlspecialchars($campaign['name']) ?></h4>
                                         <p class="text-muted"><?= htmlspecialchars($campaign['description']) ?></p>
-                                        <p><strong>Pregunta:</strong> <?= htmlspecialchars($campaign['question']) ?></p>
+                                        <p><strong>Preguntas:</strong> 
+                                            <?php
+                                            // Obtener preguntas de la campaña
+                                            $stmt = $conn->prepare("SELECT question_text FROM campaign_questions WHERE campaign_id = ? ORDER BY order_index");
+                                            $stmt->execute([$campaign_id]);
+                                            $questions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                                            if ($questions) {
+                                                echo htmlspecialchars(implode(', ', $questions));
+                                            } else {
+                                                echo 'Sin preguntas definidas';
+                                            }
+                                            ?>
+                                        </p>
                                     </div>
                                     <div class="col-md-4 text-end">
                                         <span class="badge bg-<?= $campaign['is_active'] ? 'success' : 'secondary' ?> fs-6">
@@ -276,14 +289,23 @@ if ($campaign_id && $conn) {
                                         <div class="response-item">
                                             <div class="row align-items-center">
                                                 <div class="col-md-2">
-                                                    <span class="score-badge score-<?= $response['score'] >= 9 ? 'promoter' : ($response['score'] >= 7 ? 'passive' : 'detractor') ?>">
-                                                        <?= $response['score'] ?>/10
-                                                    </span>
+                                                    <?php 
+                                                    $score = $response['score'] ?? $response['response_score'] ?? 0;
+                                                    if ($score > 0):
+                                                    ?>
+                                                        <span class="score-badge score-<?= $score >= 9 ? 'promoter' : ($score >= 7 ? 'passive' : 'detractor') ?>">
+                                                            <?= $score ?>/10
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="score-badge score-text">Texto</span>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <?php if ($response['comment']): ?>
+                                                    <?php 
+                                                    $comment = $response['comment'] ?? $response['response_text'] ?? '';
+                                                    if ($comment): ?>
                                                         <p class="mb-1"><strong>Comentario:</strong></p>
-                                                        <p class="mb-0"><?= htmlspecialchars($response['comment']) ?></p>
+                                                        <p class="mb-0"><?= htmlspecialchars($comment) ?></p>
                                                     <?php else: ?>
                                                         <p class="text-muted mb-0">Sin comentario</p>
                                                     <?php endif; ?>
