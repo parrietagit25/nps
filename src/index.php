@@ -36,8 +36,7 @@ if ($conn) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     
     <style>
         :root {
@@ -112,6 +111,80 @@ if ($conn) {
             color: white;
             padding: 2rem 0;
             margin-top: 3rem;
+        }
+        
+        /* Pricing Plans Styles */
+        .pricing-card {
+            position: relative;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .pricing-card.featured {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-10px);
+        }
+        
+        .pricing-badge {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .pricing-header {
+            padding: 1rem 0;
+        }
+        
+        .pricing-price {
+            margin: 1rem 0;
+        }
+        
+        .pricing-price .currency {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .pricing-price .amount {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .pricing-price .period {
+            font-size: 1rem;
+            color: #6c757d;
+        }
+        
+        .pricing-features {
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .pricing-features li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .pricing-features li:last-child {
+            border-bottom: none;
         }
     </style>
 </head>
@@ -223,20 +296,67 @@ if ($conn) {
                 </div>
             </div>
             
-            <!-- Chart -->
+            <!-- Pricing Plans -->
             <div class="row mt-4">
-                <div class="col-md-8">
-                    <div class="feature-card">
-                        <h4>Distribución NPS</h4>
-                        <canvas id="npsChart" width="400" height="200"></canvas>
+                <div class="col-md-4">
+                    <div class="feature-card text-center pricing-card">
+                        <div class="pricing-header mb-3">
+                            <h4 class="text-primary">Basic</h4>
+                            <div class="pricing-price">
+                                <span class="currency">$</span>
+                                <span class="amount">149</span>
+                                <span class="period">/Mes*</span>
+                            </div>
+                        </div>
+                        <ul class="pricing-features list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Hasta 100 respuestas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>3 campañas activas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Reportes básicos</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Soporte por email</li>
+                        </ul>
+                        <button class="btn btn-outline-primary btn-custom w-100">Seleccionar Plan</button>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="feature-card">
-                        <h4>Últimas Respuestas</h4>
-                        <div id="recentResponses">
-                            <p class="text-muted">Cargando...</p>
+                    <div class="feature-card text-center pricing-card featured">
+                        <div class="pricing-badge">Más Popular</div>
+                        <div class="pricing-header mb-3">
+                            <h4 class="text-primary">Advanced</h4>
+                            <div class="pricing-price">
+                                <span class="currency">$</span>
+                                <span class="amount">249</span>
+                                <span class="period">/Mes*</span>
+                            </div>
                         </div>
+                        <ul class="pricing-features list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Hasta 500 respuestas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>10 campañas activas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Reportes avanzados</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Soporte prioritario</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Integración API</li>
+                        </ul>
+                        <button class="btn btn-primary btn-custom w-100">Seleccionar Plan</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center pricing-card">
+                        <div class="pricing-header mb-3">
+                            <h4 class="text-primary">Enterprise</h4>
+                            <div class="pricing-price">
+                                <span class="currency">$</span>
+                                <span class="amount">449</span>
+                                <span class="period">/Mes*</span>
+                            </div>
+                        </div>
+                        <ul class="pricing-features list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Respuestas ilimitadas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Campañas ilimitadas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Reportes personalizados</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Soporte 24/7</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Integración completa</li>
+                            <li><i class="fas fa-check text-success me-2"></i>White-label</li>
+                        </ul>
+                        <button class="btn btn-outline-primary btn-custom w-100">Seleccionar Plan</button>
                     </div>
                 </div>
             </div>
@@ -283,7 +403,6 @@ if ($conn) {
         // Load dashboard data
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardData();
-            loadNPSChart();
         });
 
         function loadDashboardData() {
@@ -293,51 +412,7 @@ if ($conn) {
                 document.getElementById('npsScore').textContent = '72';
                 document.getElementById('promoters').textContent = '456';
                 document.getElementById('detractors').textContent = '123';
-                
-                // Load recent responses
-                document.getElementById('recentResponses').innerHTML = `
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Juan Pérez</span>
-                        <span class="badge bg-success">9</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>María García</span>
-                        <span class="badge bg-warning">7</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Carlos López</span>
-                        <span class="badge bg-danger">4</span>
-                    </div>
-                `;
             }, 1000);
-        }
-
-        function loadNPSChart() {
-            const ctx = document.getElementById('npsChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Promotores (9-10)', 'Pasivos (7-8)', 'Detractores (0-6)'],
-                    datasets: [{
-                        data: [456, 345, 123],
-                        backgroundColor: [
-                            '#27ae60',
-                            '#f39c12',
-                            '#e74c3c'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
         }
     </script>
 </body>
