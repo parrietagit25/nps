@@ -201,18 +201,10 @@ if ($conn) {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#dashboard">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#surveys">Encuestas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#reports">Reportes</a>
-                    </li>
+                    
                     <li class="nav-item">
                         <a class="nav-link" href="admin/login.php">
-                            <i class="fas fa-sign-in-alt me-1"></i>Admin
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
                         </a>
                     </li>
                 </ul>
@@ -362,7 +354,7 @@ if ($conn) {
             </div>
         </div>
 
-        <!-- Quick Actions -->
+        <!-- Quick Actions 
         <div class="hero-section text-center">
             <h3 class="mb-4">Acciones Rápidas</h3>
             <div class="row">
@@ -382,7 +374,7 @@ if ($conn) {
                     </a>
                 </div>
             </div>
-        </div>
+        </div>-->
     </div>
 
     <!-- Footer -->
