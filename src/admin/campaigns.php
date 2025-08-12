@@ -552,7 +552,7 @@ if ($conn) {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-info me-2" onclick="testForm()">Probar Formulario</button>
+                        <!--<button type="button" class="btn btn-info me-2" onclick="testForm()">Probar Formulario</button>-->
                         <button type="submit" class="btn btn-primary">Crear Campaña</button>
                     </div>
                 </form>
