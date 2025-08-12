@@ -62,10 +62,10 @@ if ($conn) {
     $stmt = $conn->prepare("
         SELECT 
             c.name,
-            COUNT(r.id) as responses,
-            AVG(r.score) as avg_score
+            COUNT(DISTINCT r.session_id) as responses,
+            AVG(r.response_score) as avg_score
         FROM campaigns c
-        LEFT JOIN nps_responses r ON c.id = r.campaign_id
+        LEFT JOIN survey_responses r ON c.id = r.campaign_id AND r.response_score IS NOT NULL
         WHERE c.is_active = 1
         GROUP BY c.id, c.name
         ORDER BY responses DESC
@@ -99,13 +99,13 @@ if ($conn) {
     if ($score_filter) {
         switch ($score_filter) {
             case 'detractors':
-                $where_conditions[] = "r.score <= 6";
+                $where_conditions[] = "r.response_score <= 6";
                 break;
             case 'passives':
-                $where_conditions[] = "r.score BETWEEN 7 AND 8";
+                $where_conditions[] = "r.response_score BETWEEN 7 AND 8";
                 break;
             case 'promoters':
-                $where_conditions[] = "r.score >= 9";
+                $where_conditions[] = "r.response_score >= 9";
                 break;
         }
     }
@@ -115,9 +115,12 @@ if ($conn) {
     $stmt = $conn->prepare("
         SELECT 
             r.*,
-            c.name as campaign_name
-        FROM nps_responses r
+            c.name as campaign_name,
+            cq.question_text,
+            cq.question_type
+        FROM survey_responses r
         LEFT JOIN campaigns c ON r.campaign_id = c.id
+        LEFT JOIN campaign_questions cq ON r.question_id = cq.id
         {$where_clause}
         ORDER BY r.created_at DESC
         LIMIT 100

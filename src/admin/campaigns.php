@@ -117,24 +117,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif ($action === 'delete') {
         $campaign_id = $_POST['campaign_id'];
         
-        // Verificar si hay respuestas asociadas
-        $stmt = $conn->prepare("SELECT COUNT(*) as count FROM nps_responses WHERE campaign_id = ?");
-        $stmt->execute([$campaign_id]);
-        $responseCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
-        
-        if ($responseCount > 0) {
-            $message = 'No se puede eliminar la campaña porque tiene respuestas asociadas';
-            $messageType = 'danger';
-        } else {
-            $stmt = $conn->prepare("DELETE FROM campaigns WHERE id = ?");
+        try {
+            $conn->beginTransaction();
             
-            if ($stmt->execute([$campaign_id])) {
-                $message = 'Campaña eliminada exitosamente';
-                $messageType = 'success';
-            } else {
-                $message = 'Error al eliminar la campaña';
+            // Verificar si hay respuestas asociadas en ambas tablas (compatibilidad hacia atrás)
+            $stmt = $conn->prepare("SELECT COUNT(*) as count FROM survey_responses WHERE campaign_id = ?");
+            $stmt->execute([$campaign_id]);
+            $surveyResponseCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            
+            $stmt = $conn->prepare("SELECT COUNT(*) as count FROM nps_responses WHERE campaign_id = ?");
+            $stmt->execute([$campaign_id]);
+            $legacyResponseCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            
+            $totalResponses = $surveyResponseCount + $legacyResponseCount;
+            
+            if ($totalResponses > 0) {
+                $message = 'No se puede eliminar la campaña porque tiene respuestas asociadas';
                 $messageType = 'danger';
+            } else {
+                // Eliminar preguntas asociadas primero (por las foreign keys)
+                $stmt = $conn->prepare("DELETE FROM campaign_questions WHERE campaign_id = ?");
+                $stmt->execute([$campaign_id]);
+                
+                // Eliminar enlaces asociados
+                $stmt = $conn->prepare("DELETE FROM campaign_links WHERE campaign_id = ?");
+                $stmt->execute([$campaign_id]);
+                
+                // Finalmente eliminar la campaña
+                $stmt = $conn->prepare("DELETE FROM campaigns WHERE id = ?");
+                
+                if ($stmt->execute([$campaign_id])) {
+                    $conn->commit();
+                    $message = 'Campaña eliminada exitosamente';
+                    $messageType = 'success';
+                } else {
+                    throw new Exception('Error al eliminar la campaña');
+                }
             }
+        } catch (Exception $e) {
+            $conn->rollBack();
+            $message = 'Error al eliminar la campaña: ' . $e->getMessage();
+            $messageType = 'danger';
         }
     } elseif ($action === 'toggle_status') {
         $campaign_id = $_POST['campaign_id'];

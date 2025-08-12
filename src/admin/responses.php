@@ -24,28 +24,45 @@ if ($campaign_id && $conn) {
     $campaign = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($campaign) {
-        // Obtener respuestas
-        $stmt = $conn->prepare("SELECT * FROM nps_responses WHERE campaign_id = ? ORDER BY created_at DESC");
+        // Obtener respuestas de la nueva tabla survey_responses
+        $stmt = $conn->prepare("
+            SELECT 
+                sr.*,
+                cq.question_text,
+                cq.question_type
+            FROM survey_responses sr
+            JOIN campaign_questions cq ON sr.question_id = cq.id
+            WHERE sr.campaign_id = ? AND sr.response_score IS NOT NULL
+            ORDER BY sr.created_at DESC
+        ");
         $stmt->execute([$campaign_id]);
         $responses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Calcular estadísticas
-        $total_responses = count($responses);
+        // También obtener respuestas de la tabla legacy para compatibilidad
+        $stmt = $conn->prepare("SELECT * FROM nps_responses WHERE campaign_id = ? ORDER BY created_at DESC");
+        $stmt->execute([$campaign_id]);
+        $legacyResponses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Combinar respuestas y calcular estadísticas
+        $allResponses = array_merge($responses, $legacyResponses);
+        $total_responses = count($allResponses);
         $promoters = 0;
         $passives = 0;
         $detractors = 0;
         $total_score = 0;
         
-        foreach ($responses as $response) {
-            $score = $response['score'];
-            $total_score += $score;
-            
-            if ($score >= 9) {
-                $promoters++;
-            } elseif ($score >= 7) {
-                $passives++;
-            } else {
-                $detractors++;
+        foreach ($allResponses as $response) {
+            $score = $response['score'] ?? $response['response_score'] ?? 0;
+            if ($score > 0) {
+                $total_score += $score;
+                
+                if ($score >= 9) {
+                    $promoters++;
+                } elseif ($score >= 7) {
+                    $passives++;
+                } else {
+                    $detractors++;
+                }
             }
         }
         
