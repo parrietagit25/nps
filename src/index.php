@@ -253,10 +253,7 @@ if ($conn) {
 
         <!-- Dashboard Section -->
         <div id="dashboard" class="hero-section">
-            <h2 class="text-center mb-4">
-                <i class="fas fa-tachometer-alt text-primary me-2"></i>
-                Dashboard
-            </h2>
+            
             <div class="row">
                 <div class="col-md-3">
                     <div class="stats-card text-center">
