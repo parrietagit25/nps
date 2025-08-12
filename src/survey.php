@@ -1,5 +1,6 @@
 <?php
 require_once 'config/database.php';
+require_once 'config/encryption.php';
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -8,24 +9,43 @@ $campaign = null;
 $message = '';
 $messageType = '';
 
-// Obtener ID de la campaña
-$campaign_id = $_GET['id'] ?? null;
+// Obtener token encriptado de la campaña
+$token = $_GET['token'] ?? null;
 
-if ($campaign_id && $conn) {
-    $stmt = $conn->prepare("SELECT * FROM campaigns WHERE id = ? AND is_active = 1");
-    $stmt->execute([$campaign_id]);
-    $campaign = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$campaign) {
-        $message = 'Campaña no encontrada o inactiva';
-        $messageType = 'danger';
-    } else {
-        // Verificar fechas
-        $today = date('Y-m-d');
-        if ($today < $campaign['start_date'] || $today > $campaign['end_date']) {
-            $message = 'Esta encuesta no está disponible en este momento';
-            $messageType = 'warning';
+if ($token && $conn) {
+    try {
+        $encryption = new Encryption();
+        $campaign_id = $encryption->decryptCampaignData($token);
+        
+        if ($campaign_id === false) {
+            $message = 'Enlace inválido o expirado';
+            $messageType = 'danger';
+        } else {
+            // Verificar que la campaña existe y está activa
+            $stmt = $conn->prepare("SELECT * FROM campaigns WHERE id = ? AND is_active = 1");
+            $stmt->execute([$campaign_id]);
+            $campaign = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$campaign) {
+                $message = 'Campaña no encontrada o inactiva';
+                $messageType = 'danger';
+            } else {
+                // Verificar fechas
+                $today = date('Y-m-d');
+                if ($today < $campaign['start_date'] || $today > $campaign['end_date']) {
+                    $message = 'Esta encuesta no está disponible en este momento';
+                    $messageType = 'warning';
+                } else {
+                    // Marcar el enlace como usado en la base de datos
+                    $stmt = $conn->prepare("UPDATE campaign_links SET is_used = TRUE, used_at = NOW(), used_ip = ? WHERE token = ? AND campaign_id = ?");
+                    $stmt->execute([$_SERVER['REMOTE_ADDR'] ?? 'unknown', $token, $campaign_id]);
+                }
+            }
         }
+    } catch (Exception $e) {
+        error_log("Error procesando token: " . $e->getMessage());
+        $message = 'Error al procesar el enlace';
+        $messageType = 'danger';
     }
 } else {
     $message = 'Enlace inválido';

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/env.php';
+require_once __DIR__ . '/encryption.php';
 
 use SendGrid\Mail\Mail;
 use SendGrid;
@@ -85,14 +86,25 @@ class SendGridService {
 
     private function generateSurveyUrl($campaign_id) {
         $base_url = "http://nps.grupopcr.com.pa";
-        return $base_url . "/survey.php?id=" . $campaign_id;
+        
+        // Generar token encriptado para la URL
+        try {
+            $encryption = new Encryption();
+            $token = $encryption->encryptCampaignData($campaign_id, 168); // 7 días de validez
+            return $base_url . "/survey.php?token=" . $token;
+        } catch (Exception $e) {
+            error_log("Error generando URL encriptada: " . $e->getMessage());
+            // Fallback a URL no encriptada (no recomendado para producción)
+            return $base_url . "/survey.php?id=" . $campaign_id;
+        }
     }
 
     private function generateEmailHTML($campaign_data, $survey_url) {
         return '<!DOCTYPE html>
-        <html>
+        <html lang="es">
         <head>
             <meta charset="UTF-8">
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>' . htmlspecialchars($campaign_data["name"]) . '</title>
         </head>

@@ -56,6 +56,21 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Create campaign_links table for secure URL tracking
+CREATE TABLE IF NOT EXISTS campaign_links (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id INT NOT NULL,
+    generated_by INT NOT NULL,
+    token TEXT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
+    used_at TIMESTAMP NULL,
+    used_ip VARCHAR(45),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+    FOREIGN KEY (generated_by) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Insert default admin user (password: admin123)
 INSERT INTO users (username, email, password_hash, full_name, role) VALUES
 ('admin', 'admin@nps.com', '$2y$10$RL9s38HLWdRIaTgCEgKU.eER1rL4XMG3ydVBdopcqb/4X/xjknvO6', 'Administrador', 'admin')
@@ -91,6 +106,9 @@ CREATE INDEX idx_campaigns_is_active ON campaigns(is_active);
 CREATE INDEX idx_campaigns_created_by ON campaigns(created_by);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_campaign_links_campaign_id ON campaign_links(campaign_id);
+CREATE INDEX idx_campaign_links_token ON campaign_links(token(255));
+CREATE INDEX idx_campaign_links_expires_at ON campaign_links(expires_at);
 
 -- Show created tables
 SHOW TABLES;

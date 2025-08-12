@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once '../config/database.php';
+require_once '../config/encryption.php';
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -513,10 +514,29 @@ if ($conn) {
         
         // Función para obtener enlace de compartir
         function getShareLink(campaignId) {
-            const baseUrl = window.location.origin;
-            const shareUrl = `${baseUrl}/survey.php?id=${campaignId}`;
-            document.getElementById('share_link').value = shareUrl;
-            new bootstrap.Modal(document.getElementById('shareLinkModal')).show();
+            // Generar enlace encriptado usando AJAX
+            fetch('generate_secure_link.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'campaign_id=' + campaignId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const baseUrl = window.location.origin;
+                    const shareUrl = `${baseUrl}/survey.php?token=${data.token}`;
+                    document.getElementById('share_link').value = shareUrl;
+                    new bootstrap.Modal(document.getElementById('shareLinkModal')).show();
+                } else {
+                    alert('Error al generar el enlace seguro: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al generar el enlace seguro');
+            });
         }
         
         // Función para copiar al portapapeles
