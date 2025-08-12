@@ -523,7 +523,7 @@ if ($conn) {
                                         <div class="options-list">
                                             <div class="option-item mb-2">
                                                 <div class="input-group">
-                                                    <input type="text" class="form-control option-text" name="question_1_option_1" placeholder="Opción 1" required>
+                                                    <input type="text" class="form-control option-text" name="question_1_option_1" placeholder="Opción 1" disabled>
                                                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                                         <i class="fas fa-times"></i>
                                                     </button>
@@ -531,7 +531,7 @@ if ($conn) {
                                             </div>
                                             <div class="option-item mb-2">
                                                 <div class="input-group">
-                                                    <input type="text" class="form-control option-text" name="question_1_option_2" placeholder="Opción 2" required>
+                                                    <input type="text" class="form-control option-text" name="question_1_option_2" placeholder="Opción 2" disabled>
                                                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                                         <i class="fas fa-times"></i>
                                                     </button>
@@ -853,6 +853,23 @@ if ($conn) {
             document.getElementById('edit_end_date').min = this.value;
         });
         
+        // Inicializar las opciones de la primera pregunta al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ocultar las opciones de la primera pregunta por defecto
+            const firstQuestion = document.querySelector('.question-item');
+            if (firstQuestion) {
+                const optionsContainer = firstQuestion.querySelector('.options-container');
+                if (optionsContainer) {
+                    optionsContainer.style.display = 'none';
+                    const optionInputs = optionsContainer.querySelectorAll('.option-text');
+                    optionInputs.forEach(input => {
+                        input.required = false;
+                        input.disabled = true;
+                    });
+                }
+            }
+        });
+        
         // Funciones para manejar preguntas dinámicas
         function addQuestion() {
             const container = document.getElementById('questionsContainer');
@@ -890,7 +907,7 @@ if ($conn) {
                     <div class="options-list">
                         <div class="option-item mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control option-text" name="question_${questionCount + 1}_option_1" placeholder="Opción 1" required>
+                                <input type="text" class="form-control option-text" name="question_${questionCount + 1}_option_1" placeholder="Opción 1" disabled>
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -898,7 +915,7 @@ if ($conn) {
                         </div>
                         <div class="option-item mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control option-text" name="question_${questionCount + 1}_option_2" placeholder="Opción 2" required>
+                                <input type="text" class="form-control option-text" name="question_${questionCount + 1}_option_2" placeholder="Opción 2" disabled>
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -1010,7 +1027,7 @@ if ($conn) {
                     <div class="options-list">
                         <div class="option-item mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control option-text" name="edit_option_1" placeholder="Opción 1" required>
+                                <input type="text" class="form-control option-text" name="edit_option_1" placeholder="Opción 1" disabled>
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -1018,7 +1035,7 @@ if ($conn) {
                         </div>
                         <div class="option-item mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control option-text" name="edit_option_2" placeholder="Opción 2" required>
+                                <input type="text" class="form-control option-text" name="edit_option_2" placeholder="Opción 2" disabled>
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -1051,15 +1068,19 @@ if ($conn) {
             
             if (questionType === 'multiple_choice') {
                 optionsContainer.style.display = 'block';
-                // Hacer las opciones requeridas
+                // Hacer las opciones requeridas solo si están visibles
                 const optionInputs = optionsContainer.querySelectorAll('.option-text');
-                optionInputs.forEach(input => input.required = true);
+                optionInputs.forEach(input => {
+                    input.required = true;
+                    input.disabled = false;
+                });
             } else {
                 optionsContainer.style.display = 'none';
-                // Quitar el required de las opciones y limpiar valores
+                // Quitar el required y deshabilitar las opciones cuando no están visibles
                 const optionInputs = optionsContainer.querySelectorAll('.option-text');
                 optionInputs.forEach(input => {
                     input.required = false;
+                    input.disabled = true;
                     input.value = '';
                 });
             }
@@ -1079,7 +1100,7 @@ if ($conn) {
             optionDiv.className = 'option-item mb-2';
             optionDiv.innerHTML = `
                 <div class="input-group">
-                    <input type="text" class="form-control option-text" name="${uniqueName}" placeholder="Opción ${optionCount}" required>
+                    <input type="text" class="form-control option-text" name="${uniqueName}" placeholder="Opción ${optionCount}" disabled>
                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                         <i class="fas fa-times"></i>
                     </button>
@@ -1117,7 +1138,7 @@ if ($conn) {
                 return `
                     <div class="option-item mb-2">
                         <div class="input-group">
-                            <input type="text" class="form-control option-text" name="edit_option_1" placeholder="Opción 1" required>
+                            <input type="text" class="form-control option-text" name="edit_option_1" placeholder="Opción 1" disabled>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1125,7 +1146,7 @@ if ($conn) {
                     </div>
                     <div class="option-item mb-2">
                         <div class="input-group">
-                            <input type="text" class="form-control option-text" name="edit_option_2" placeholder="Opción 2" required>
+                            <input type="text" class="form-control option-text" name="edit_option_2" placeholder="Opción 2" disabled>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1139,7 +1160,7 @@ if ($conn) {
                 html += `
                     <div class="option-item mb-2">
                         <div class="input-group">
-                            <input type="text" class="form-control option-text" name="edit_option_${index + 1}" placeholder="Opción ${index + 1}" value="${option}" required>
+                            <input type="text" class="form-control option-text" name="edit_option_${index + 1}" placeholder="Opción ${index + 1}" value="${option}" disabled>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1153,7 +1174,7 @@ if ($conn) {
                 html += `
                     <div class="option-item mb-2">
                         <div class="input-group">
-                            <input type="text" class="form-control option-text" name="edit_option_${options.length + 1}" placeholder="Opción ${options.length + 1}" required>
+                            <input type="text" class="form-control option-text" name="edit_option_${options.length + 1}" placeholder="Opción ${options.length + 1}" disabled>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1202,28 +1223,28 @@ if ($conn) {
                                     required: required
                                 };
                                 
-                                // Si es pregunta de opción múltiple, agregar las opciones
-                                if (type === 'multiple_choice') {
-                                    const options = [];
-                                    const optionInputs = item.querySelectorAll('.option-text');
-                                    optionInputs.forEach(input => {
-                                        const optionText = input.value.trim();
-                                        if (optionText) {
-                                            options.push(optionText);
-                                        }
-                                    });
-                                    
-                                    console.log('Opciones encontradas:', options);
-                                    
-                                    // Validar que haya al menos 2 opciones
-                                    if (options.length < 2) {
-                                        e.preventDefault();
-                                        alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
-                                        return false;
-                                    }
-                                    
-                                    questionData.options = options;
-                                }
+                                                                 // Si es pregunta de opción múltiple, agregar las opciones
+                                 if (type === 'multiple_choice') {
+                                     const options = [];
+                                     const optionInputs = item.querySelectorAll('.option-text:not([disabled])');
+                                     optionInputs.forEach(input => {
+                                         const optionText = input.value.trim();
+                                         if (optionText) {
+                                             options.push(optionText);
+                                         }
+                                     });
+                                     
+                                     console.log('Opciones encontradas:', options);
+                                     
+                                     // Validar que haya al menos 2 opciones
+                                     if (options.length < 2) {
+                                         e.preventDefault();
+                                         alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
+                                         return false;
+                                     }
+                                     
+                                     questionData.options = options;
+                                 }
                                 
                                 questions.push(questionData);
                             }
@@ -1270,26 +1291,26 @@ if ($conn) {
                                 required: required
                             };
                             
-                            // Si es pregunta de opción múltiple, agregar las opciones
-                            if (type === 'multiple_choice') {
-                                const options = [];
-                                const optionInputs = item.querySelectorAll('.option-text');
-                                optionInputs.forEach(input => {
-                                    const optionText = input.value.trim();
-                                    if (optionText) {
-                                        options.push(optionText);
-                                    }
-                                });
-                                
-                                // Validar que haya al menos 2 opciones
-                                if (options.length < 2) {
-                                    e.preventDefault();
-                                    alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
-                                    return false;
-                                }
-                                
-                                questionData.options = options;
-                            }
+                                                         // Si es pregunta de opción múltiple, agregar las opciones
+                             if (type === 'multiple_choice') {
+                                 const options = [];
+                                 const optionInputs = item.querySelectorAll('.option-text:not([disabled])');
+                                 optionInputs.forEach(input => {
+                                     const optionText = input.value.trim();
+                                     if (optionText) {
+                                         options.push(optionText);
+                                     }
+                                 });
+                                 
+                                 // Validar que haya al menos 2 opciones
+                                 if (options.length < 2) {
+                                     e.preventDefault();
+                                     alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
+                                     return false;
+                                 }
+                                 
+                                 questionData.options = options;
+                             }
                             
                             questions.push(questionData);
                         }
