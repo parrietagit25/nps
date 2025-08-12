@@ -446,7 +446,7 @@ if ($conn) {
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST">
+                <form method="POST" id="createCampaignForm">
                     <div class="modal-body">
                         <input type="hidden" name="action" value="create">
                         
@@ -496,10 +496,10 @@ if ($conn) {
                                 <div class="question-item mb-3 p-3 border rounded">
                                     <div class="row">
                                         <div class="col-md-8">
-                                            <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." required>
+                                            <input type="text" class="form-control question-text" name="question_1" placeholder="Escribe tu pregunta aquí..." required>
                                         </div>
                                         <div class="col-md-2">
-                                            <select class="form-select question-type" onchange="toggleOptionsField(this)">
+                                            <select class="form-select question-type" name="question_type_1" onchange="toggleOptionsField(this)">
                                                 <option value="nps">NPS</option>
                                                 <option value="rating">Rating</option>
                                                 <option value="text">Texto</option>
@@ -509,7 +509,7 @@ if ($conn) {
                                         <div class="col-md-2">
                                             <div class="d-flex align-items-center">
                                                 <div class="form-check me-2">
-                                                    <input class="form-check-input question-required" type="checkbox" checked>
+                                                    <input class="form-check-input question-required" type="checkbox" name="question_required_1" checked>
                                                     <label class="form-check-label">Requerida</label>
                                                 </div>
                                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeQuestion(this)">
@@ -523,7 +523,7 @@ if ($conn) {
                                         <div class="options-list">
                                             <div class="option-item mb-2">
                                                 <div class="input-group">
-                                                    <input type="text" class="form-control option-text" placeholder="Opción 1" required>
+                                                    <input type="text" class="form-control option-text" name="question_1_option_1" placeholder="Opción 1" required>
                                                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                                         <i class="fas fa-times"></i>
                                                     </button>
@@ -531,7 +531,7 @@ if ($conn) {
                                             </div>
                                             <div class="option-item mb-2">
                                                 <div class="input-group">
-                                                    <input type="text" class="form-control option-text" placeholder="Opción 2" required>
+                                                    <input type="text" class="form-control option-text" name="question_1_option_2" placeholder="Opción 2" required>
                                                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                                         <i class="fas fa-times"></i>
                                                     </button>
@@ -552,6 +552,7 @@ if ($conn) {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-info me-2" onclick="testForm()">Probar Formulario</button>
                         <button type="submit" class="btn btn-primary">Crear Campaña</button>
                     </div>
                 </form>
@@ -807,6 +808,42 @@ if ($conn) {
             window.location.href = `responses.php?id=${campaignId}`;
         }
         
+        // Función para probar el formulario
+        function testForm() {
+            const form = document.getElementById('createCampaignForm');
+            if (form) {
+                const formData = new FormData(form);
+                console.log('Datos del formulario:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`${key}: ${value}`);
+                }
+                
+                // Verificar el campo questions
+                const questionsInput = form.querySelector('input[name="questions"]');
+                if (questionsInput) {
+                    console.log('Campo questions:', questionsInput.value);
+                } else {
+                    console.error('Campo questions no encontrado');
+                }
+                
+                // Verificar preguntas
+                const questionItems = form.querySelectorAll('.question-item');
+                console.log('Preguntas encontradas:', questionItems.length);
+                
+                questionItems.forEach((item, index) => {
+                    const text = item.querySelector('.question-text')?.value;
+                    const type = item.querySelector('.question-type')?.value;
+                    const required = item.querySelector('.question-required')?.checked;
+                    console.log(`Pregunta ${index + 1}:`, { text, type, required });
+                    
+                    if (type === 'multiple_choice') {
+                        const options = item.querySelectorAll('.option-text');
+                        console.log(`Opciones para pregunta ${index + 1}:`, Array.from(options).map(opt => opt.value));
+                    }
+                });
+            }
+        }
+        
         // Establecer fecha mínima para end_date
         document.getElementById('start_date').addEventListener('change', function() {
             document.getElementById('end_date').min = this.value;
@@ -826,10 +863,10 @@ if ($conn) {
             questionDiv.innerHTML = `
                 <div class="row">
                     <div class="col-md-8">
-                        <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." required>
+                        <input type="text" class="form-control question-text" name="question_${questionCount + 1}" placeholder="Escribe tu pregunta aquí..." required>
                     </div>
                     <div class="col-md-2">
-                        <select class="form-select question-type" onchange="toggleOptionsField(this)">
+                        <select class="form-select question-type" name="question_type_${questionCount + 1}" onchange="toggleOptionsField(this)">
                             <option value="nps">NPS</option>
                             <option value="rating">Rating</option>
                             <option value="text">Texto</option>
@@ -839,7 +876,7 @@ if ($conn) {
                     <div class="col-md-2">
                         <div class="d-flex align-items-center">
                             <div class="form-check me-2">
-                                <input class="form-check-input question-required" type="checkbox" checked>
+                                <input class="form-check-input question-required" type="checkbox" name="question_required_${questionCount + 1}" checked>
                                 <label class="form-check-label">Requerida</label>
                             </div>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeQuestion(this)">
@@ -853,7 +890,7 @@ if ($conn) {
                     <div class="options-list">
                         <div class="option-item mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control option-text" placeholder="Opción 1" required>
+                                <input type="text" class="form-control option-text" name="question_${questionCount + 1}_option_1" placeholder="Opción 1" required>
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -861,7 +898,7 @@ if ($conn) {
                         </div>
                         <div class="option-item mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control option-text" placeholder="Opción 2" required>
+                                <input type="text" class="form-control option-text" name="question_${questionCount + 1}_option_2" placeholder="Opción 2" required>
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -973,7 +1010,7 @@ if ($conn) {
                     <div class="options-list">
                         <div class="option-item mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control option-text" placeholder="Opción 1" required>
+                                <input type="text" class="form-control option-text" name="edit_option_1" placeholder="Opción 1" required>
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -981,7 +1018,7 @@ if ($conn) {
                         </div>
                         <div class="option-item mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control option-text" placeholder="Opción 2" required>
+                                <input type="text" class="form-control option-text" name="edit_option_2" placeholder="Opción 2" required>
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -1033,11 +1070,16 @@ if ($conn) {
             const optionsList = button.previousElementSibling;
             const optionCount = optionsList.children.length + 1;
             
+            // Generar un nombre único para la opción
+            const questionItem = button.closest('.question-item');
+            const questionIndex = Array.from(questionItem.parentElement.children).indexOf(questionItem) + 1;
+            const uniqueName = `question_${questionIndex}_option_${optionCount}`;
+            
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option-item mb-2';
             optionDiv.innerHTML = `
                 <div class="input-group">
-                    <input type="text" class="form-control option-text" placeholder="Opción ${optionCount}" required>
+                    <input type="text" class="form-control option-text" name="${uniqueName}" placeholder="Opción ${optionCount}" required>
                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                         <i class="fas fa-times"></i>
                     </button>
@@ -1075,7 +1117,7 @@ if ($conn) {
                 return `
                     <div class="option-item mb-2">
                         <div class="input-group">
-                            <input type="text" class="form-control option-text" placeholder="Opción 1" required>
+                            <input type="text" class="form-control option-text" name="edit_option_1" placeholder="Opción 1" required>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1083,7 +1125,7 @@ if ($conn) {
                     </div>
                     <div class="option-item mb-2">
                         <div class="input-group">
-                            <input type="text" class="form-control option-text" placeholder="Opción 2" required>
+                            <input type="text" class="form-control option-text" name="edit_option_2" placeholder="Opción 2" required>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1097,7 +1139,7 @@ if ($conn) {
                 html += `
                     <div class="option-item mb-2">
                         <div class="input-group">
-                            <input type="text" class="form-control option-text" placeholder="Opción ${index + 1}" value="${option}" required>
+                            <input type="text" class="form-control option-text" name="edit_option_${index + 1}" placeholder="Opción ${index + 1}" value="${option}" required>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1111,7 +1153,7 @@ if ($conn) {
                 html += `
                     <div class="option-item mb-2">
                         <div class="input-group">
-                            <input type="text" class="form-control option-text" placeholder="Opción ${options.length + 1}" required>
+                            <input type="text" class="form-control option-text" name="edit_option_${options.length + 1}" placeholder="Opción ${options.length + 1}" required>
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeOption(this)">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1128,50 +1170,67 @@ if ($conn) {
         // Solo aplicar a formularios que tengan preguntas (crear/editar campaña)
         document.addEventListener('DOMContentLoaded', function() {
             // Formulario de creación de campaña
-            const createForm = document.querySelector('form[action=""]');
+            const createForm = document.getElementById('createCampaignForm');
             if (createForm) {
                 createForm.addEventListener('submit', function(e) {
+                    console.log('Formulario de creación enviado');
+                    
                     const questionItems = this.querySelectorAll('.question-item');
-                    if (questionItems.length === 0) return true;
+                    if (questionItems.length === 0) {
+                        console.log('No hay preguntas, continuando...');
+                        return true;
+                    }
                     
                     const questions = [];
                     
                     questionItems.forEach((item, index) => {
-                        const text = item.querySelector('.question-text').value.trim();
-                        const type = item.querySelector('.question-type').value;
-                        const required = item.querySelector('.question-required').checked;
+                        const textInput = item.querySelector('.question-text');
+                        const typeSelect = item.querySelector('.question-type');
+                        const requiredCheckbox = item.querySelector('.question-required');
                         
-                        if (text) {
-                            const questionData = {
-                                text: text,
-                                type: type,
-                                required: required
-                            };
+                        if (textInput && typeSelect && requiredCheckbox) {
+                            const text = textInput.value.trim();
+                            const type = typeSelect.value;
+                            const required = requiredCheckbox.checked;
                             
-                            // Si es pregunta de opción múltiple, agregar las opciones
-                            if (type === 'multiple_choice') {
-                                const options = [];
-                                const optionInputs = item.querySelectorAll('.option-text');
-                                optionInputs.forEach(input => {
-                                    const optionText = input.value.trim();
-                                    if (optionText) {
-                                        options.push(optionText);
-                                    }
-                                });
+                            console.log(`Procesando pregunta ${index + 1}:`, { text, type, required });
+                            
+                            if (text) {
+                                const questionData = {
+                                    text: text,
+                                    type: type,
+                                    required: required
+                                };
                                 
-                                // Validar que haya al menos 2 opciones
-                                if (options.length < 2) {
-                                    e.preventDefault();
-                                    alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
-                                    return false;
+                                // Si es pregunta de opción múltiple, agregar las opciones
+                                if (type === 'multiple_choice') {
+                                    const options = [];
+                                    const optionInputs = item.querySelectorAll('.option-text');
+                                    optionInputs.forEach(input => {
+                                        const optionText = input.value.trim();
+                                        if (optionText) {
+                                            options.push(optionText);
+                                        }
+                                    });
+                                    
+                                    console.log('Opciones encontradas:', options);
+                                    
+                                    // Validar que haya al menos 2 opciones
+                                    if (options.length < 2) {
+                                        e.preventDefault();
+                                        alert('Las preguntas de opción múltiple deben tener al menos 2 opciones');
+                                        return false;
+                                    }
+                                    
+                                    questionData.options = options;
                                 }
                                 
-                                questionData.options = options;
+                                questions.push(questionData);
                             }
-                            
-                            questions.push(questionData);
                         }
                     });
+                    
+                    console.log('Preguntas recolectadas:', questions);
                     
                     if (questions.length === 0) {
                         e.preventDefault();
@@ -1183,6 +1242,9 @@ if ($conn) {
                     const questionsInput = this.querySelector('input[name="questions"]');
                     if (questionsInput) {
                         questionsInput.value = JSON.stringify(questions);
+                        console.log('Campo questions actualizado:', questionsInput.value);
+                    } else {
+                        console.error('No se encontró el campo questions');
                     }
                 });
             }
