@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS campaigns (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    question TEXT,
     start_date DATE,
     end_date DATE,
     is_active BOOLEAN DEFAULT TRUE,
@@ -35,7 +34,35 @@ CREATE TABLE IF NOT EXISTS campaigns (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create nps_responses table
+-- Create campaign_questions table for multiple questions per campaign
+CREATE TABLE IF NOT EXISTS campaign_questions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id INT NOT NULL,
+    question_text TEXT NOT NULL,
+    question_type ENUM('nps', 'text', 'rating', 'multiple_choice') DEFAULT 'nps',
+    is_required BOOLEAN DEFAULT TRUE,
+    order_index INT DEFAULT 0,
+    options JSON NULL, -- For multiple choice questions
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create survey_responses table for multiple questions
+CREATE TABLE IF NOT EXISTS survey_responses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id INT NOT NULL,
+    question_id INT NOT NULL,
+    response_value TEXT,
+    response_score INT NULL, -- For NPS and rating questions
+    email VARCHAR(255),
+    session_id VARCHAR(255), -- To group responses from same user
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES campaign_questions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create legacy nps_responses table for backward compatibility
 CREATE TABLE IF NOT EXISTS nps_responses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     campaign_id INT,
@@ -94,9 +121,16 @@ INSERT INTO settings (setting_key, setting_value, description) VALUES
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 
 -- Insert sample campaign
-INSERT INTO campaigns (name, description, question, start_date, end_date, created_by, is_active) VALUES
-('Encuesta General de Satisfacción', 'Encuesta para medir la satisfacción general de nuestros clientes', '¿Qué tan probable es que recomiendes nuestro servicio a un amigo o colega?', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 1, 1)
+INSERT INTO campaigns (name, description, start_date, end_date, created_by, is_active) VALUES
+('Encuesta General de Satisfacción', 'Encuesta para medir la satisfacción general de nuestros clientes', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 1, 1)
 ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- Insert sample questions for the campaign
+INSERT INTO campaign_questions (campaign_id, question_text, question_type, is_required, order_index) VALUES
+(1, '¿Qué tan probable es que recomiendes nuestro servicio a un amigo o colega?', 'nps', TRUE, 1),
+(1, '¿Cómo calificarías la calidad de nuestro servicio?', 'rating', TRUE, 2),
+(1, '¿Qué aspectos te gustaría que mejoremos?', 'text', FALSE, 3)
+ON DUPLICATE KEY UPDATE question_text = VALUES(question_text);
 
 -- Create indexes for better performance (MySQL 8.0 compatible)
 CREATE INDEX idx_nps_responses_campaign_id ON nps_responses(campaign_id);
@@ -109,6 +143,11 @@ CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_campaign_links_campaign_id ON campaign_links(campaign_id);
 CREATE INDEX idx_campaign_links_token ON campaign_links(token(255));
 CREATE INDEX idx_campaign_links_expires_at ON campaign_links(expires_at);
+CREATE INDEX idx_campaign_questions_campaign_id ON campaign_questions(campaign_id);
+CREATE INDEX idx_campaign_questions_order_index ON campaign_questions(order_index);
+CREATE INDEX idx_survey_responses_campaign_id ON survey_responses(campaign_id);
+CREATE INDEX idx_survey_responses_question_id ON survey_responses(question_id);
+CREATE INDEX idx_survey_responses_session_id ON survey_responses(session_id);
 
 -- Show created tables
 SHOW TABLES;

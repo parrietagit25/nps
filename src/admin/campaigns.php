@@ -23,36 +23,95 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($action === 'create') {
         $name = trim($_POST['name']);
         $description = trim($_POST['description']);
-        $question = trim($_POST['question']);
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'];
         $is_active = isset($_POST['is_active']) ? 1 : 0;
         
-        $stmt = $conn->prepare("INSERT INTO campaigns (name, description, question, start_date, end_date, is_active, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-        
-        if ($stmt->execute([$name, $description, $question, $start_date, $end_date, $is_active, $_SESSION['user_id']])) {
-            $message = 'Campaña creada exitosamente';
-            $messageType = 'success';
-        } else {
-            $message = 'Error al crear la campaña';
+        try {
+            $conn->beginTransaction();
+            
+            // Insertar campaña
+            $stmt = $conn->prepare("INSERT INTO campaigns (name, description, start_date, end_date, is_active, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+            
+            if ($stmt->execute([$name, $description, $start_date, $end_date, $is_active, $_SESSION['user_id']])) {
+                $campaign_id = $conn->lastInsertId();
+                
+                // Insertar preguntas
+                $questions = json_decode($_POST['questions'], true);
+                if ($questions && is_array($questions)) {
+                    $stmt = $conn->prepare("INSERT INTO campaign_questions (campaign_id, question_text, question_type, is_required, order_index) VALUES (?, ?, ?, ?, ?)");
+                    
+                    foreach ($questions as $index => $question) {
+                        if (!empty($question['text'])) {
+                            $stmt->execute([
+                                $campaign_id,
+                                trim($question['text']),
+                                $question['type'] ?? 'nps',
+                                isset($question['required']) ? 1 : 0,
+                                $index + 1
+                            ]);
+                        }
+                    }
+                }
+                
+                $conn->commit();
+                $message = 'Campaña creada exitosamente';
+                $messageType = 'success';
+            } else {
+                throw new Exception('Error al crear la campaña');
+            }
+        } catch (Exception $e) {
+            $conn->rollBack();
+            $message = 'Error al crear la campaña: ' . $e->getMessage();
             $messageType = 'danger';
         }
     } elseif ($action === 'update') {
         $campaign_id = $_POST['campaign_id'];
         $name = trim($_POST['name']);
         $description = trim($_POST['description']);
-        $question = trim($_POST['question']);
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'];
         $is_active = isset($_POST['is_active']) ? 1 : 0;
         
-        $stmt = $conn->prepare("UPDATE campaigns SET name = ?, description = ?, question = ?, start_date = ?, end_date = ?, is_active = ? WHERE id = ?");
-        
-        if ($stmt->execute([$name, $description, $question, $start_date, $end_date, $is_active, $campaign_id])) {
-            $message = 'Campaña actualizada exitosamente';
-            $messageType = 'success';
-        } else {
-            $message = 'Error al actualizar la campaña';
+        try {
+            $conn->beginTransaction();
+            
+            // Actualizar campaña
+            $stmt = $conn->prepare("UPDATE campaigns SET name = ?, description = ?, start_date = ?, end_date = ?, is_active = ? WHERE id = ?");
+            
+            if ($stmt->execute([$name, $description, $start_date, $end_date, $is_active, $campaign_id])) {
+                // Actualizar preguntas
+                $questions = json_decode($_POST['questions'], true);
+                if ($questions && is_array($questions)) {
+                    // Eliminar preguntas existentes
+                    $stmt = $conn->prepare("DELETE FROM campaign_questions WHERE campaign_id = ?");
+                    $stmt->execute([$campaign_id]);
+                    
+                    // Insertar nuevas preguntas
+                    $stmt = $conn->prepare("INSERT INTO campaign_questions (campaign_id, question_text, question_type, is_required, order_index) VALUES (?, ?, ?, ?, ?)");
+                    
+                    foreach ($questions as $index => $question) {
+                        if (!empty($question['text'])) {
+                            $stmt->execute([
+                                $campaign_id,
+                                trim($question['text']),
+                                $question['type'] ?? 'nps',
+                                isset($question['required']) ? 1 : 0,
+                                $index + 1
+                            ]);
+                        }
+                    }
+                }
+                
+                $conn->commit();
+                $message = 'Campaña actualizada exitosamente';
+                $messageType = 'success';
+            } else {
+                throw new Exception('Error al actualizar la campaña');
+            }
+        } catch (Exception $e) {
+            $conn->rollBack();
+            $message = 'Error al actualizar la campaña: ' . $e->getMessage();
             $messageType = 'danger';
         }
     } elseif ($action === 'delete') {
@@ -100,14 +159,16 @@ if ($conn) {
         SELECT 
             c.*,
             u.full_name as created_by_name,
-            COUNT(r.id) as response_count,
-            AVG(r.score) as avg_score,
-            COUNT(CASE WHEN r.score >= 9 THEN 1 END) as promoters,
-            COUNT(CASE WHEN r.score BETWEEN 7 AND 8 THEN 1 END) as passives,
-            COUNT(CASE WHEN r.score <= 6 THEN 1 END) as detractors
+            COUNT(DISTINCT r.session_id) as response_count,
+            AVG(r.response_score) as avg_score,
+            COUNT(CASE WHEN r.response_score >= 9 THEN 1 END) as promoters,
+            COUNT(CASE WHEN r.response_score BETWEEN 7 AND 8 THEN 1 END) as passives,
+            COUNT(CASE WHEN r.response_score <= 6 THEN 1 END) as detractors,
+            COUNT(q.id) as question_count
         FROM campaigns c
         LEFT JOIN users u ON c.created_by = u.id
-        LEFT JOIN nps_responses r ON c.id = r.campaign_id
+        LEFT JOIN survey_responses r ON c.id = r.campaign_id AND r.response_score IS NOT NULL
+        LEFT JOIN campaign_questions q ON c.id = q.campaign_id
         GROUP BY c.id
         ORDER BY c.created_at DESC
     ");
@@ -348,9 +409,34 @@ if ($conn) {
                         </div>
                         
                         <div class="mb-3">
-                            <label for="question" class="form-label">Pregunta NPS *</label>
-                            <textarea class="form-control" id="question" name="question" rows="3" required placeholder="¿Qué tan probable es que recomiendes nuestro servicio a un amigo o colega?"></textarea>
-                            <div class="form-text">Esta será la pregunta que verán los encuestados</div>
+                            <label class="form-label">Preguntas de la Encuesta *</label>
+                            <div id="questionsContainer">
+                                <div class="question-item mb-3 p-3 border rounded">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select class="form-select question-type">
+                                                <option value="nps">NPS</option>
+                                                <option value="rating">Rating</option>
+                                                <option value="text">Texto</option>
+                                                <option value="multiple_choice">Opción Múltiple</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input question-required" type="checkbox" checked>
+                                                <label class="form-check-label">Requerida</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addQuestion()">
+                                <i class="fas fa-plus me-1"></i>Agregar Pregunta
+                            </button>
+                            <div class="form-text">Agrega todas las preguntas que necesites para tu encuesta</div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -575,6 +661,90 @@ if ($conn) {
         
         document.getElementById('edit_start_date').addEventListener('change', function() {
             document.getElementById('edit_end_date').min = this.value;
+        });
+        
+        // Funciones para manejar preguntas dinámicas
+        function addQuestion() {
+            const container = document.getElementById('questionsContainer');
+            const questionCount = container.children.length;
+            
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-item mb-3 p-3 border rounded';
+            questionDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control question-text" placeholder="Escribe tu pregunta aquí..." required>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select question-type">
+                            <option value="nps">NPS</option>
+                            <option value="rating">Rating</option>
+                            <option value="text">Texto</option>
+                            <option value="multiple_choice">Opción Múltiple</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="d-flex align-items-center">
+                            <div class="form-check me-2">
+                                <input class="form-check-input question-required" type="checkbox" checked>
+                                <label class="form-check-label">Requerida</label>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeQuestion(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(questionDiv);
+        }
+        
+        function removeQuestion(button) {
+            const questionItem = button.closest('.question-item');
+            if (document.querySelectorAll('.question-item').length > 1) {
+                questionItem.remove();
+            } else {
+                alert('Debe haber al menos una pregunta');
+            }
+        }
+        
+        // Función para recolectar todas las preguntas antes de enviar el formulario
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const questions = [];
+                const questionItems = this.querySelectorAll('.question-item');
+                
+                questionItems.forEach((item, index) => {
+                    const text = item.querySelector('.question-text').value.trim();
+                    const type = item.querySelector('.question-type').value;
+                    const required = item.querySelector('.question-required').checked;
+                    
+                    if (text) {
+                        questions.push({
+                            text: text,
+                            type: type,
+                            required: required
+                        });
+                    }
+                });
+                
+                if (questions.length === 0) {
+                    e.preventDefault();
+                    alert('Debe agregar al menos una pregunta');
+                    return false;
+                }
+                
+                // Crear campo oculto con las preguntas
+                let questionsInput = this.querySelector('input[name="questions"]');
+                if (!questionsInput) {
+                    questionsInput = document.createElement('input');
+                    questionsInput.type = 'hidden';
+                    questionsInput.name = 'questions';
+                    this.appendChild(questionsInput);
+                }
+                questionsInput.value = JSON.stringify(questions);
+            });
         });
     </script>
 </body>
